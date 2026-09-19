@@ -1,0 +1,30 @@
+title: "[General] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for joining the MeteorRadio V5 community. Use this category for general discussion about the station, GRAVES meteor scatter, software, operation, and project direction.
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      description: What would you like to discuss?
+      placeholder: Describe your topic, observation, idea, or question.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Add useful context such as hardware, operating system, SDR, antenna, screenshots, logs, or links.
+      placeholder: Raspberry Pi model, RTL-SDR model, antenna, frequency, screenshots, logs...
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I checked that the post does not expose passwords, tokens, private keys, or exact private location data.
+          required: true
