@@ -11,7 +11,6 @@ MeteorRadio V5 is a documented **Raspberry Pi 4 + RTL-SDR radio meteor detector*
 
 The main dashboard combines Raspberry Pi health, detection browsing, spectrum analysis, a GRAVES meteor-scatter waterfall, event parameters, and the local 1–7 detection score in one interface.
 
-
 ## Reference build
 
 - Reference snapshot: `20260919_023454_V5`
@@ -59,6 +58,21 @@ flowchart LR
     G --> M[8097 statistics]
     D --> N[healthcheck]
 ```
+
+## Community
+
+MeteorRadio V5 is intended to be useful as both a reference station and a community project.
+
+When GitHub Discussions is enabled, use it for:
+
+- **General** — broad MeteorRadio / GRAVES conversation
+- **Q&A** — focused questions with reusable answers
+- **Ideas** — proposed improvements and experiments
+- **Show and tell** — stations, detections, waterfalls, antennas, hardware, and dashboard modifications
+
+Use **Issues** for reproducible bugs or concrete tracked work, and **Pull Requests** for proposed code/documentation changes.
+
+See [`docs/COMMUNITY.md`](docs/COMMUNITY.md) for posting guidance and privacy notes.
 
 ## Public repo vs local reference
 
@@ -122,6 +136,7 @@ Key documents:
 - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)
 - [`docs/PRIVACY_AND_SANITIZATION.md`](docs/PRIVACY_AND_SANITIZATION.md)
 - [`docs/PUBLICATION_CHECKLIST.md`](docs/PUBLICATION_CHECKLIST.md)
+- [`docs/COMMUNITY.md`](docs/COMMUNITY.md)
 
 ## Upstream
 
