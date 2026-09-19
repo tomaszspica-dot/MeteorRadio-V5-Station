@@ -1,0 +1,11 @@
+MeteorRadio V5 -> MR_GH import
+Built: 2026-09-19T11:46:50+0200
+Installer: MeteorRadio_V5_ChatGPT_Installer.zip
+Public Python files: 16
+Reference systemd files: 14
+Local-only private reference files: 23
+
+Installer manifest verification: PASS
+
+Next step:
+  ./VALIDATE_BEFORE_GITHUB.command

@@ -1,0 +1,27 @@
+[Unit]
+Description=MeteorRadio GRAVES 143.050 MHz
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=pi
+Group=pi
+Environment=HOME=/home/pi
+Environment=PYTHONUNBUFFERED=1
+
+WorkingDirectory=/home/pi/MeteorRadio/src
+
+ExecStart=/home/pi/vMeteorRadio/bin/python -u /home/pi/MeteorRadio/src/meteor_radar.py -v -f 143050000 -g auto -s 45 --detectionband -200 200
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillSignal=SIGTERM
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

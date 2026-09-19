@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement to the station overlay
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Use case
+      description: What station problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: rtl
+    attributes:
+      label: Could this affect RTL-SDR ownership?
+      options:
+        - "No"
+        - "Yes"
+        - "Unsure"
+    validations:
+      required: true

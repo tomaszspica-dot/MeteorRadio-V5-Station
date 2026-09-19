@@ -1,0 +1,22 @@
+[Unit]
+Description=MeteorRadio likes/favorites web service
+After=network.target meteorradio-web.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+
+ExecStart=/usr/bin/python3 -u /home/pi/meteorradio-web/likes_server.py
+
+Restart=always
+RestartSec=3
+
+Nice=19
+IOSchedulingClass=idle
+CPUWeight=10
+
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

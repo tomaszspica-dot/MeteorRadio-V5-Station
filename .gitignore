@@ -1,0 +1,52 @@
+# macOS / editor
+.DS_Store
+._*
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local/private reference pulled from the final installer
+/private_reference/
+/local/
+
+# Station-specific configuration
+.radar_config
+*.radar_config
+config/station.local.*
+
+# Runtime state
+**/cache/
+**/health/history.jsonl
+**/health/latest.json
+v562_score_index.json
+v562_likes.json
+v562_retention_state.json
+v562_retention_deleted.jsonl
+v562_deleted_low_scores.jsonl
+v562_no_head_failures.json
+
+# Observation data
+SMP_*.npz
+SPG_*.npz
+AUD_*.raw
+*.wav
+radar_data/
+
+# Generated detection cache images
+SMP_*_v5*.png
+SMP_*_v52*.png
+
+# Packages / local exports
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Logs
+*.log

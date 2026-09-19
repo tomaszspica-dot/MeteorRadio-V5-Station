@@ -1,0 +1,13 @@
+# Example only. Copy to ~/.radar_config on the station and edit locally.
+# Do NOT commit your real private coordinates unless intentionally public.
+
+stationID: YOUR_STATION_NAME
+longitude: YOUR_LONGITUDE
+latitude: YOUR_LATITUDE
+elevation: YOUR_ELEVATION_METRES
+ID_NUM: YOUR_OPTIONAL_PROJECT_ID
+foff: YOUR_MEASURED_SDR_OFFSET_HZ
+TxSource: GRAVES
+TimeSync: NTP
+country: YOUR_COUNTRY
+region: YOUR_REGION

@@ -1,0 +1,12 @@
+[Unit]
+Description=MeteorRadio score new detections every 5 minutes
+
+[Timer]
+# MR_AFTER_FINISH_TIMER_V1
+OnUnitInactiveSec=5min
+OnBootSec=90s
+AccuracySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

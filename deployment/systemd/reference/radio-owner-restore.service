@@ -1,0 +1,16 @@
+[Unit]
+Description=Restore RTL-SDR Owner
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/local/sbin/radio-owner-control restore
+
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

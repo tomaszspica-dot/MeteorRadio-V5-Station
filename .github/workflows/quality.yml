@@ -1,0 +1,19 @@
+name: repository-quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  syntax-and-sanitization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate public repository
+        run: bash scripts/validate_public_repo.sh

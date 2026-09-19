@@ -1,0 +1,23 @@
+[Unit]
+Description=MeteorRadio background scoring of new detections
+After=meteorradio-web.service
+Requires=meteorradio-web.service
+
+[Service]
+Type=oneshot
+
+# Nie pozwalamy renderowi PNG konkurować z classifierem.
+ExecStartPre=-/usr/bin/systemctl stop meteorradio-prerender.service
+
+ExecStart=/usr/sbin/runuser -u pi -- /usr/bin/nice -n 19 /usr/bin/python3 -u /home/pi/meteorradio-web/score_new_detections.py
+
+# Po zakończeniu scoringu pre-render wraca.
+ExecStopPost=-/usr/bin/systemctl start meteorradio-prerender.service
+
+TimeoutStartSec=180
+
+Nice=19
+IOSchedulingClass=idle
+CPUWeight=10
+
+NoNewPrivileges=true

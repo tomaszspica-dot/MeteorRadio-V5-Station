@@ -1,0 +1,19 @@
+[Unit]
+Description=MeteorRadio passive health check
+After=network.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+
+# TYLKO monitoring.
+# Ten serwis NICZEGO nie restartuje.
+ExecStart=/usr/bin/python3 /usr/local/sbin/meteorradio-healthcheck.py
+
+Nice=19
+IOSchedulingClass=idle
+
+TimeoutStartSec=45
+
+[Install]
+WantedBy=multi-user.target

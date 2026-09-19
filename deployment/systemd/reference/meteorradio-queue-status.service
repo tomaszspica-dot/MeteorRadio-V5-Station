@@ -1,0 +1,14 @@
+[Unit]
+Description=MeteorRadio scoring queue status
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u /home/pi/meteorradio-web/queue_status_server.py
+Restart=always
+RestartSec=3
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

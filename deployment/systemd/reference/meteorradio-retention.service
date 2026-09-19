@@ -1,0 +1,15 @@
+[Unit]
+Description=MeteorRadio delete unliked qualified detections after 7 days
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+
+ExecStart=/usr/bin/nice -n 19 /usr/bin/python3 -u /home/pi/meteorradio-web/likes_retention.py
+
+Nice=19
+IOSchedulingClass=idle
+CPUWeight=10
+
+NoNewPrivileges=true

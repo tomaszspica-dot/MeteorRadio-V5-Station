@@ -1,0 +1,282 @@
+#!/bin/bash
+set -u
+
+DOCKER="/usr/bin/docker"
+SYSTEMCTL="/usr/bin/systemctl"
+
+AUTO_RX="radiosonde_auto_rx"
+METEOR="meteorradio.service"
+
+STATE_DIR="/var/lib/radio-owner"
+STATE_FILE="$STATE_DIR/owner"
+LOCK_FILE="/run/lock/radio-owner.lock"
+
+mkdir -p "$STATE_DIR"
+
+sonde_running() {
+    [ "$(
+        "$DOCKER" inspect \
+          -f '{{.State.Running}}' \
+          "$AUTO_RX" 2>/dev/null
+    )" = "true" ]
+}
+
+meteor_running() {
+    "$SYSTEMCTL" is-active \
+      --quiet "$METEOR"
+}
+
+persisted_owner() {
+
+    if [ -f "$STATE_FILE" ]; then
+        tr -d '\r\n' < "$STATE_FILE"
+    else
+        printf 'SONDEHUB'
+    fi
+}
+
+actual_owner() {
+
+    local s=0
+    local m=0
+
+    sonde_running && s=1
+    meteor_running && m=1
+
+    if [ "$s" -eq 1 ] && [ "$m" -eq 1 ]; then
+        printf 'CONFLICT'
+
+    elif [ "$s" -eq 1 ]; then
+        printf 'SONDEHUB'
+
+    elif [ "$m" -eq 1 ]; then
+        printf 'METEOR'
+
+    else
+        printf 'OFF'
+    fi
+}
+
+status_json() {
+
+    local actual persisted sr mr
+
+    actual="$(actual_owner)"
+    persisted="$(persisted_owner)"
+
+    sonde_running && sr=true || sr=false
+    meteor_running && mr=true || mr=false
+
+    printf '{'
+    printf '"ok":true,'
+    printf '"owner":"%s",' "$actual"
+    printf '"persisted_owner":"%s",' "$persisted"
+    printf '"sondehub_running":%s,' "$sr"
+    printf '"meteorradio_running":%s,' "$mr"
+    printf '"meteorradio_frequency_mhz":143.05'
+    printf '}\n'
+}
+
+wait_sonde_off() {
+
+    local i
+
+    for i in $(seq 1 40); do
+        sonde_running || return 0
+        sleep 0.5
+    done
+
+    return 1
+}
+
+wait_sonde_on() {
+
+    local i
+
+    for i in $(seq 1 40); do
+        sonde_running && return 0
+        sleep 0.5
+    done
+
+    return 1
+}
+
+wait_meteor_off() {
+
+    local i
+
+    for i in $(seq 1 40); do
+        meteor_running || return 0
+        sleep 0.5
+    done
+
+    return 1
+}
+
+wait_meteor_on() {
+
+    local i
+
+    for i in $(seq 1 40); do
+        meteor_running && return 0
+        sleep 0.5
+    done
+
+    return 1
+}
+
+switch_sondehub() {
+
+    "$SYSTEMCTL" stop "$METEOR" \
+      >/dev/null 2>&1 || true
+
+    if ! wait_meteor_off; then
+        echo '{"ok":false,"error":"MeteorRadio nie zwolniło RTL-SDR."}'
+        return 1
+    fi
+
+    sleep 1
+
+    "$DOCKER" start "$AUTO_RX" \
+      >/dev/null
+
+    if ! wait_sonde_on; then
+        echo '{"ok":false,"error":"SondeHub nie wystartował."}'
+        return 1
+    fi
+
+    echo SONDEHUB > "$STATE_FILE"
+
+    status_json
+}
+
+switch_meteor() {
+
+    "$DOCKER" stop \
+      -t 15 \
+      "$AUTO_RX" \
+      >/dev/null 2>&1 || true
+
+    if ! wait_sonde_off; then
+        echo '{"ok":false,"error":"SondeHub nie zwolnił RTL-SDR."}'
+        return 1
+    fi
+
+    #
+    # Mała przerwa, żeby libusb całkowicie zwolniło urządzenie.
+    #
+    sleep 2
+
+    "$SYSTEMCTL" reset-failed "$METEOR" \
+      >/dev/null 2>&1 || true
+
+    "$SYSTEMCTL" start "$METEOR"
+
+    if ! wait_meteor_on; then
+
+        "$SYSTEMCTL" stop "$METEOR" \
+          >/dev/null 2>&1 || true
+
+        "$DOCKER" start "$AUTO_RX" \
+          >/dev/null 2>&1 || true
+
+        wait_sonde_on || true
+
+        echo '{"ok":false,"error":"MeteorRadio nie wystartowało. SondeHub został przywrócony."}'
+        return 1
+    fi
+
+    #
+    # Proces musi utrzymać się przynajmniej kilka sekund.
+    #
+    sleep 7
+
+    if ! meteor_running; then
+
+        "$SYSTEMCTL" stop "$METEOR" \
+          >/dev/null 2>&1 || true
+
+        "$DOCKER" start "$AUTO_RX" \
+          >/dev/null 2>&1 || true
+
+        wait_sonde_on || true
+
+        echo '{"ok":false,"error":"MeteorRadio zakończyło pracę po otwarciu SDR. SondeHub przywrócony."}'
+        return 1
+    fi
+
+    echo METEOR > "$STATE_FILE"
+
+    status_json
+}
+
+switch_off() {
+
+    "$SYSTEMCTL" stop "$METEOR" \
+      >/dev/null 2>&1 || true
+
+    "$DOCKER" stop \
+      -t 15 \
+      "$AUTO_RX" \
+      >/dev/null 2>&1 || true
+
+    echo OFF > "$STATE_FILE"
+
+    status_json
+}
+
+restore_owner() {
+
+    case "$(persisted_owner)" in
+
+        METEOR)
+            switch_meteor
+            ;;
+
+        OFF)
+            switch_off
+            ;;
+
+        *)
+            switch_sondehub
+            ;;
+    esac
+}
+
+ACTION="${1:-status}"
+
+if [ "$ACTION" = "status" ]; then
+    status_json
+    exit 0
+fi
+
+exec 9>"$LOCK_FILE"
+
+if ! flock -w 30 9; then
+    echo '{"ok":false,"error":"Trwa inne przełączanie RTL-SDR."}'
+    exit 1
+fi
+
+case "$ACTION" in
+
+    sondehub)
+        switch_sondehub
+        ;;
+
+    meteor)
+        switch_meteor
+        ;;
+
+    off)
+        switch_off
+        ;;
+
+    restore)
+        restore_owner
+        ;;
+
+    *)
+        echo '{"ok":false,"error":"Dozwolone: status, sondehub, meteor, off, restore"}'
+        exit 2
+        ;;
+esac
