@@ -1,8 +1,16 @@
-# MeteorRadio V5 — GRAVES / RTL-SDR station overlay
+# MeteorRadio V5 — Raspberry Pi + RTL-SDR GRAVES 143.050 MHz Radio Meteor Detector
 
-A Raspberry Pi + RTL-SDR radio-meteor station built around the upstream **MeteorRadio** project and extended with adaptive capture, automatic scoring, retention, web dashboards, cache rendering, health monitoring, and optional shared-RTL-SDR arbitration.
+MeteorRadio V5 is a documented **Raspberry Pi 4 + RTL-SDR radio meteor detector** and **meteor-scatter monitoring station** for the **GRAVES 143.050 MHz** carrier. It extends the upstream **MeteorRadio** acquisition/detection core with adaptive capture, automatic scoring, retention, web dashboards, cached waterfall rendering, health monitoring, and optional shared-RTL-SDR arbitration for citizen-science radio observations.
 
 > **Repository status:** GitHub-ready documentation and station overlay. The upstream MeteorRadio core is intentionally **not** included in the public tree until redistribution/licensing is clarified. See [`UPSTREAM_LICENSE_NOTICE.md`](UPSTREAM_LICENSE_NOTICE.md).
+
+<!-- MR_SHOWCASE_V1 -->
+## Project preview
+
+![MeteorRadio V5 Raspberry Pi RTL-SDR GRAVES 143.050 MHz radio meteor detection dashboard](assets/screenshots/dashboard-main.png)
+
+The main dashboard combines Raspberry Pi health, detection browsing, spectrum analysis, a GRAVES meteor-scatter waterfall, event parameters, and the local 1–7 detection score in one interface.
+
 
 ## Reference build
 
@@ -84,6 +92,18 @@ Then run:
 chmod +x VALIDATE_BEFORE_GITHUB.command
 ./VALIDATE_BEFORE_GITHUB.command
 ```
+
+## Screenshots
+
+### Statistics and station history
+
+![MeteorRadio V5 statistics dashboard with scoring history and station health](assets/screenshots/dashboard-stats.png)
+
+### Detection gallery
+
+![MeteorRadio V5 GRAVES radio meteor detections gallery](assets/screenshots/detections-gallery-preview.png)
+
+[Open the full detection gallery screenshot](assets/screenshots/detections-gallery-full.png) · [More screenshots and UI notes](docs/SHOWCASE.md)
 
 ## Documentation
 

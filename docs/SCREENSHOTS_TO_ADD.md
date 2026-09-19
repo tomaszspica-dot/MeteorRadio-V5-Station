@@ -1,26 +1,18 @@
-# Screenshots to add
+# Screenshots status
 
-Create a small set of clean screenshots for the GitHub README. Do not use screenshots containing private browser tabs, usernames, terminal history or exact station location.
+The first sanitized project screenshots are now included under `assets/screenshots/` and linked from the main README.
 
-Recommended files under `assets/screenshots/`:
+## Included
 
-1. `8094-main-dashboard.png`
-   - detection list + one clear waterfall
-2. `8096-favourites.png`
-   - grid of liked detections
-3. `8096-image-modal.png`
-   - full-size waterfall opened from a thumbnail
-4. `8097-statistics.png`
-   - 8 final statistics tiles + graph area
-5. `hardware-rf-chain.jpg`
-   - antenna/LNA/RTL-SDR/Pi overview
+- `dashboard-main.png` — main 8094 detection dashboard and a clear GRAVES waterfall
+- `dashboard-stats.png` — 8097 statistics, scoring history and station health
+- `detections-gallery-preview.png` — compact gallery preview for README use
+- `detections-gallery-full.png` — complete tall gallery capture
 
-Suggested README layout:
+## Still useful later
 
-```markdown
-## Screenshots
+- dedicated 8096 favourites screenshot
+- 8096 full-size image-modal screenshot
+- hardware RF-chain photo (antenna / LNA / RTL-SDR / Raspberry Pi)
 
-![Main dashboard](assets/screenshots/8094-main-dashboard.png)
-![Favourites](assets/screenshots/8096-favourites.png)
-![Statistics](assets/screenshots/8097-statistics.png)
-```
+All future screenshots should be checked for browser tabs, bookmarks, terminal prompts, hostnames, usernames, private IP addresses and exact station coordinates before commit.

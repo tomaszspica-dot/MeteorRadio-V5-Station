@@ -1,6 +1,13 @@
-# MeteorRadio V5 — stacja GRAVES / RTL-SDR
+# MeteorRadio V5 — Raspberry Pi + RTL-SDR, detekcja meteorów GRAVES 143.050 MHz
 
-To jest przygotowany do GitHuba pakiet dokumentacyjny i warstwa stacji MeteorRadio V5. Projekt bazuje na upstreamowym `rabssm/MeteorRadio`, ale dodaje własną obsługę stacji: adaptacyjne nagrywanie detekcji, scoring 1–7, retencję, ulubione, cztery panele WWW, prerender obrazów, healthcheck oraz opcjonalne współdzielenie jednego RTL-SDR z innym odbiornikiem.
+MeteorRadio V5 to stacja do **radiowej detekcji meteorów i meteor scatter** oparta o **Raspberry Pi 4 + RTL-SDR** i sygnał **GRAVES 143.050 MHz**. Projekt bazuje na upstreamowym `rabssm/MeteorRadio`, ale dodaje adaptacyjne nagrywanie detekcji, scoring 1–7, retencję, ulubione, cztery panele WWW, prerender obrazów, healthcheck oraz opcjonalne współdzielenie jednego RTL-SDR z innym odbiornikiem.
+
+<!-- MR_SHOWCASE_V1 -->
+## Podgląd projektu
+
+![MeteorRadio V5 — panel detekcji meteorów GRAVES 143.050 MHz](assets/screenshots/dashboard-main.png)
+
+[Więcej zrzutów ekranu](docs/SHOWCASE.md)
 
 ## Stan referencyjny
 

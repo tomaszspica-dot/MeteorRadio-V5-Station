@@ -2,6 +2,7 @@
 
 ## V5 — 2026-09-19
 
+- added sanitized project screenshots and GitHub showcase/discoverability documentation
 - added adaptive capture with pre-trigger context and fade-based stop
 - added local scoring pipeline 1–7
 - added score-based 1–7 day retention policy
