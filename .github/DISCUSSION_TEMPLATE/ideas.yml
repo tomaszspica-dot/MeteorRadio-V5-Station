@@ -1,0 +1,35 @@
+title: "[Idea] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use Ideas for feature proposals and improvements to MeteorRadio V5. Bugs that need concrete tracking should go to Issues.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What would this idea improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed idea
+      description: Describe the feature or change.
+    validations:
+      required: true
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Expected benefit
+      description: Who would benefit and how?
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or references
+      description: Optional links, comparable projects, sketches, or screenshots.
+    validations:
+      required: false
