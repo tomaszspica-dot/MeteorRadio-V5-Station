@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import time
+import zipfile
 import urllib.parse
 import urllib.request
 
@@ -26,9 +27,9 @@ INDEX=(
 )
 
 MAX_PER_RUN=9223372036854775807  # UNLIMITED
-MAX_TEMP=75.0
+MAX_TEMP=70.0
 
-MAX_LOAD=3.50
+MAX_LOAD=2.00
 
 MIN_AGE=30.0
 
@@ -830,6 +831,54 @@ def classify(src):
 
 
 
+
+# ============================================================
+# MR_BAD_NPZ_GUARD_V1
+# ============================================================
+
+def npz_is_valid(src):
+
+    try:
+
+        if (
+            not src.is_file()
+            or
+            src.stat().st_size <= 0
+        ):
+            return False
+
+        if not zipfile.is_zipfile(src):
+            return False
+
+        with zipfile.ZipFile(src, "r") as zf:
+
+            names=set(zf.namelist())
+
+            required={
+                "samples.npy",
+                "sample_rate.npy",
+                "centre_freq.npy",
+            }
+
+            if not required.issubset(names):
+                return False
+
+            if zf.testzip() is not None:
+                return False
+
+        return True
+
+    except Exception as exc:
+
+        log(
+            "NPZ_VALIDATE_ERROR",
+            src.name,
+            repr(exc),
+        )
+
+        return False
+
+
 def main():
 
     try:
@@ -887,6 +936,17 @@ def main():
         batch=queue
         queue=[]
         for src in batch:
+
+            if not npz_is_valid(src):
+
+                log(
+                    "SKIP_BAD_NPZ",
+                    src.name,
+                )
+
+                seen_cycle.add(src.name)
+                continue
+
             old_no_head=no_head_attempts(src.name)
             
             if old_no_head >= NO_HEAD_DELETE_AFTER:

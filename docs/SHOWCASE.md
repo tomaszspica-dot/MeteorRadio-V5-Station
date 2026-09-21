@@ -23,3 +23,17 @@ The statistics view summarizes detections, scoring distribution, retention, favo
 ## Search terms
 
 MeteorRadio V5, radio meteor detection, meteor scatter, GRAVES radar, GRAVES 143.050 MHz, RTL-SDR, RTL-SDR Blog V4, Raspberry Pi, citizen science, radio observation, SDR waterfall.
+
+---
+
+## 3D Spectrogram Viewer
+
+![3D Spectrogram Viewer](../assets/screenshots/spectrogram-3d-viewer.png)
+
+Read-only analysis of saved observation data with selectable Doppler span and FFT resolution.
+
+## 3D Trajectory Analyzer
+
+![3D Trajectory Analyzer](../assets/screenshots/trajectory-analyzer-v08.png)
+
+Single-station bistatic geometry exploration based on measured Doppler evolution. Displayed solutions are hypotheses/families of compatible geometries rather than a unique trajectory.

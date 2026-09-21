@@ -1,10 +1,12 @@
 # Screenshots
 
-Sanitized screenshots of the MeteorRadio V5 reference station.
+Public screenshots included in this repository:
 
-- `dashboard-main.png` — main detection dashboard and GRAVES waterfall
-- `dashboard-stats.png` — statistics, scoring and station-health dashboard
-- `detections-gallery-preview.png` — compact gallery preview for the README
-- `detections-gallery-full.png` — full tall detection-gallery capture
+- `dashboard-main.png`
+- `dashboard-stats.png`
+- `detections-gallery-preview.png`
+- `detections-gallery-full.png`
+- `spectrogram-3d-viewer.png`
+- `trajectory-analyzer-v08.png`
 
-The committed PNGs contain no embedded PNG metadata. Always review future screenshots for browser tabs, bookmarks, terminal prompts, hostnames, usernames, private IPs and exact coordinates before committing them.
+The screenshots contain example station output and are included for documentation and interface reference.

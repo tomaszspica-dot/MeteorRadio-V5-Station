@@ -21,3 +21,18 @@
 In the shared-radio reference build, `meteorradio.service` being `disabled` is deliberate. `radio-owner-restore.service` decides which receiver should own the RTL-SDR after boot.
 
 Do not change that design without understanding the local radio-sharing topology.
+
+---
+
+## Final V5 analysis services
+
+| Port | Service | Purpose |
+|---:|---|---|
+| 8094 | MeteorRadio web | Main detection interface |
+| 8095 | Queue/status | Scoring queue status |
+| 8096 | Likes/retention | Score/like/retention API |
+| 8097 | Statistics | Detection statistics |
+| 8099 | 3D Spectrogram Viewer | Read-only saved-observation analysis |
+| 8100 | 3D Trajectory Analyzer | Single-station bistatic trajectory-family analysis |
+
+The 8099/8100 analysis chain operates on saved observations and does not acquire the RTL-SDR directly.

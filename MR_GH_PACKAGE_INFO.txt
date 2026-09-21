@@ -1,17 +1,19 @@
-MeteorRadio V5 - GitHub preparation package
-Prepared: 2026-09-19
-Folder name: MR_GH
-Purpose: prepare a safe, documented GitHub repository for the V5 reference station.
+MeteorRadio V5 public station layer
 
-Reference Golden:
-  20260919_023454_V5
-  69 source files
-  ~1.2 MB without raw SMP/cache PNG
-  SHA256(SHA256SUMS.txt)=36dfebd31fec749266fa5f5b902635feef7bd75add4bd57c6205806f22c98b9f
+Reference private Golden:
+  20260921_165532_GOLDEN
 
-Expected local source installer on Mac:
-  ~/Desktop/MeteorRadio_V5_ChatGPT_Installer.zip
+Private Golden manifest:
+  104 files
 
-Important:
-  Public MR_GH intentionally excludes the modified upstream MeteorRadio core.
-  IMPORT_FROM_INSTALLER.command keeps that core under Git-ignored private_reference/.
+Private Golden archive:
+  approximately 9.1 MB compressed
+
+Excluded from the public repository:
+
+- raw radar observations
+- runtime cache/state
+- station-specific network identifiers
+- receiver coordinates
+- modified upstream acquisition core
+- private client-specific components

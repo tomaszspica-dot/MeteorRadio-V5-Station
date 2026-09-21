@@ -7,7 +7,7 @@ The reference V5 station replaces a fixed post-trigger recording window with a d
 The successful V2 deployment and runtime verification confirm:
 
 ```text
-PRE context             1.5 s
+PRE context             3.0 s
 minimum POST            0.8 s
 quiet/hang interval     1.0 s
 maximum POST            10.0 s

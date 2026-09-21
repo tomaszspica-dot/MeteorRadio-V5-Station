@@ -458,6 +458,366 @@ def csv_events():
     return rows
 
 
+
+# MR_TOTAL_DURATION_SORT_V1_BACKEND
+#
+# Pełny czas zapisu SMP:
+#
+#     samples.size / sample_rate
+#
+# Odczytujemy tylko nagłówki NPY wewnątrz NPZ.
+# Nie ładujemy całego IQ do RAM.
+#
+
+_MR_TOTAL_DURATION_CACHE = {}
+
+
+def _mr_npy_header(
+    handle,
+):
+
+    import ast
+    import struct
+
+    magic = handle.read(
+        6
+    )
+
+    if magic != b"\x93NUMPY":
+        raise ValueError(
+            "invalid NPY magic"
+        )
+
+    version = handle.read(
+        2
+    )
+
+    if len(version) != 2:
+        raise ValueError(
+            "invalid NPY version"
+        )
+
+    major = version[0]
+
+    if major == 1:
+
+        raw = handle.read(
+            2
+        )
+
+        if len(raw) != 2:
+            raise ValueError(
+                "invalid NPY v1 header"
+            )
+
+        header_len = struct.unpack(
+            "<H",
+            raw,
+        )[0]
+
+    elif major in (
+        2,
+        3,
+    ):
+
+        raw = handle.read(
+            4
+        )
+
+        if len(raw) != 4:
+            raise ValueError(
+                "invalid NPY v2/v3 header"
+            )
+
+        header_len = struct.unpack(
+            "<I",
+            raw,
+        )[0]
+
+    else:
+
+        raise ValueError(
+            "unsupported NPY version"
+        )
+
+
+    raw_header = handle.read(
+        header_len
+    )
+
+    if len(raw_header) != header_len:
+        raise ValueError(
+            "short NPY header"
+        )
+
+    encoding = (
+        "utf-8"
+        if major == 3
+        else "latin1"
+    )
+
+    header_text = raw_header.decode(
+        encoding
+    ).strip()
+
+    header = ast.literal_eval(
+        header_text
+    )
+
+    if not isinstance(
+        header,
+        dict,
+    ):
+        raise ValueError(
+            "invalid NPY header"
+        )
+
+    return header
+
+
+def _mr_npy_scalar_number(
+    handle,
+):
+
+    import struct
+
+    header = _mr_npy_header(
+        handle
+    )
+
+    shape = header.get(
+        "shape",
+        (),
+    )
+
+    if shape not in (
+        (),
+        (1,),
+    ):
+        raise ValueError(
+            "NPY scalar expected"
+        )
+
+    descr = str(
+        header.get(
+            "descr",
+            "",
+        )
+    )
+
+    endian = "="
+
+    if descr.startswith(
+        "<"
+    ):
+        endian = "<"
+
+    elif descr.startswith(
+        ">"
+    ):
+        endian = ">"
+
+    elif descr.startswith(
+        "="
+    ):
+        endian = "="
+
+
+    base = descr[-2:]
+
+    formats = {
+        "f8": "d",
+        "f4": "f",
+        "i8": "q",
+        "i4": "i",
+        "u8": "Q",
+        "u4": "I",
+    }
+
+    code = formats.get(
+        base
+    )
+
+    if code is None:
+        raise ValueError(
+            "unsupported scalar dtype: "
+            + descr
+        )
+
+    fmt = (
+        endian
+        + code
+    )
+
+    size = struct.calcsize(
+        fmt
+    )
+
+    raw = handle.read(
+        size
+    )
+
+    if len(raw) != size:
+        raise ValueError(
+            "short NPY scalar payload"
+        )
+
+    return float(
+        struct.unpack(
+            fmt,
+            raw,
+        )[0]
+    )
+
+
+def mr_total_duration_s(
+    path,
+):
+
+    import math
+    import zipfile
+
+    try:
+
+        stat = path.stat()
+
+    except Exception:
+
+        return None
+
+
+    cache_key = str(
+        path
+    )
+
+    cached = (
+        _MR_TOTAL_DURATION_CACHE
+        .get(
+            cache_key
+        )
+    )
+
+    if (
+        cached
+        and
+        cached[0]
+        ==
+        stat.st_mtime_ns
+        and
+        cached[1]
+        ==
+        stat.st_size
+    ):
+
+        return cached[2]
+
+
+    try:
+
+        with zipfile.ZipFile(
+            path,
+            "r",
+        ) as archive:
+
+            with archive.open(
+                "samples.npy",
+                "r",
+            ) as handle:
+
+                header = _mr_npy_header(
+                    handle
+                )
+
+                shape = header.get(
+                    "shape",
+                    (),
+                )
+
+                if not isinstance(
+                    shape,
+                    tuple,
+                ):
+                    raise ValueError(
+                        "invalid samples shape"
+                    )
+
+                sample_count = (
+                    math.prod(
+                        shape
+                    )
+                    if shape
+                    else 1
+                )
+
+
+            with archive.open(
+                "sample_rate.npy",
+                "r",
+            ) as handle:
+
+                sample_rate = (
+                    _mr_npy_scalar_number(
+                        handle
+                    )
+                )
+
+
+        if (
+            sample_count
+            <= 0
+            or
+            not math.isfinite(
+                sample_rate
+            )
+            or
+            sample_rate
+            <= 0
+        ):
+
+            return None
+
+
+        seconds = (
+            float(
+                sample_count
+            )
+            /
+            float(
+                sample_rate
+            )
+        )
+
+
+        if not math.isfinite(
+            seconds
+        ):
+
+            return None
+
+
+    except Exception:
+
+        return None
+
+
+    if len(
+        _MR_TOTAL_DURATION_CACHE
+    ) >= 4096:
+
+        _MR_TOTAL_DURATION_CACHE.clear()
+
+
+    _MR_TOTAL_DURATION_CACHE[
+        cache_key
+    ] = (
+        stat.st_mtime_ns,
+        stat.st_size,
+        seconds,
+    )
+
+    return seconds
+
+
 def detection_data(
     limit=8,
     page=1,
@@ -617,6 +977,11 @@ def detection_data(
                             is not None
                         )
                         else None
+                    ),
+
+                "total_duration_s":
+                    mr_total_duration_s(
+                        path
                     ),
 
                 "doppler_hz":
@@ -3012,14 +3377,14 @@ button.mr-nav-btn{
 
                 <a
                     class="mr-nav-btn"
-                    href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8096/'; return false;"
+                    href="#" onclick="location.href='http://'+location.hostname+':8096/';return false;"
                 >
                     Ulubione
                 </a>
 
                 <a
                     class="mr-nav-btn"
-                    href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8097/'; return false;"
+                    href="#" onclick="location.href='http://'+location.hostname+':8097/';return false;"
                 >
                     Statystyki
                 </a>
@@ -3307,6 +3672,14 @@ button.mr-nav-btn{
 
                 <option value="snr_asc">
                     SNR ↑
+                </option>
+
+                <option value="duration_total_desc">
+                    Czas ↓
+                </option>
+
+                <option value="duration_total_asc">
+                    Czas ↑
                 </option>
 
                 <option value="liked_first">
@@ -14707,7 +15080,7 @@ body.v59-modal-open{
      *   score
      *   liked
      *
-     * Najpierw próbujemy hostname, potem IPv4.
+     * Używamy aktualnego hostname przeglądarki.
      * ======================================================
      */
 
@@ -14722,8 +15095,7 @@ body.v59-modal-open{
             +
             location.hostname
             +
-            ":8096",
-
+            ":8096"
         ];
     }
 
@@ -16182,8 +16554,7 @@ body.v59-modal-open{
             +
             location.hostname
             +
-            ":8096",
-
+            ":8096"
         ];
     }
 
@@ -16588,6 +16959,510 @@ body.v59-modal-open{
 })();
 </script>
 
+
+
+<!-- MR_TOTAL_DURATION_SORT_V1_FRONTEND -->
+<script>
+(function(){
+
+    const MR_TOTAL_DURATION_MODES =
+        new Set([
+            "duration_total_desc",
+            "duration_total_asc"
+        ]);
+
+
+    let mrBaseSorter = null;
+
+
+    function mrTotalMode(){
+
+        const select =
+            document.getElementById(
+                "v55DetectionSort"
+            );
+
+        return select
+            ? String(
+                select.value
+                || ""
+            )
+            : "";
+    }
+
+
+    function mrTotalTimeValue(
+        item
+    ){
+
+        const raw =
+            String(
+                item?.time
+                || ""
+            );
+
+        const value =
+            Date.parse(
+                raw.replace(
+                    " ",
+                    "T"
+                )
+            );
+
+        return Number.isFinite(
+            value
+        )
+            ? value
+            : 0;
+    }
+
+
+    function mrTotalDurationValue(
+        item
+    ){
+
+        const value =
+            Number(
+                item?.total_duration_s
+            );
+
+        return Number.isFinite(
+            value
+        )
+            ? value
+            : null;
+    }
+
+
+    function mrTotalDurationSorter(
+        data
+    ){
+
+        const mode =
+            mrTotalMode();
+
+
+        if(
+            !MR_TOTAL_DURATION_MODES
+            .has(
+                mode
+            )
+        ){
+
+            if(
+                typeof mrBaseSorter
+                ===
+                "function"
+            ){
+
+                return mrBaseSorter(
+                    data
+                );
+            }
+
+            return [
+                ...data
+            ];
+        }
+
+
+        const out = [
+            ...data
+        ];
+
+
+        out.sort(
+            (a,b)=>{
+
+                const av =
+                    mrTotalDurationValue(
+                        a
+                    );
+
+                const bv =
+                    mrTotalDurationValue(
+                        b
+                    );
+
+
+                /*
+                 * Brak wartości zawsze na końcu.
+                 */
+
+                if(
+                    av === null
+                    &&
+                    bv === null
+                ){
+
+                    return (
+                        mrTotalTimeValue(b)
+                        -
+                        mrTotalTimeValue(a)
+                    );
+                }
+
+
+                if(av === null){
+                    return 1;
+                }
+
+
+                if(bv === null){
+                    return -1;
+                }
+
+
+                const diff =
+                    (
+                        mode
+                        ===
+                        "duration_total_asc"
+                    )
+                    ?
+                    (
+                        av
+                        -
+                        bv
+                    )
+                    :
+                    (
+                        bv
+                        -
+                        av
+                    );
+
+
+                return (
+                    diff
+                    ||
+                    (
+                        mrTotalTimeValue(b)
+                        -
+                        mrTotalTimeValue(a)
+                    )
+                );
+            }
+        );
+
+
+        return out;
+    }
+
+
+    mrTotalDurationSorter
+        .__mrTotalDurationSortV1 =
+        true;
+
+
+    function mrInstallTotalSorter(){
+
+        let current = null;
+
+
+        try{
+
+            current =
+                window.v55SortData;
+
+        }catch(_){
+        }
+
+
+        if(
+            typeof current
+            ===
+            "function"
+            &&
+            current
+            !==
+            mrTotalDurationSorter
+            &&
+            !current
+                .__mrTotalDurationSortV1
+        ){
+
+            mrBaseSorter =
+                current;
+        }
+
+
+        if(
+            !mrBaseSorter
+        ){
+
+            try{
+
+                if(
+                    typeof v55SortData
+                    ===
+                    "function"
+                    &&
+                    v55SortData
+                    !==
+                    mrTotalDurationSorter
+                    &&
+                    !v55SortData
+                        .__mrTotalDurationSortV1
+                ){
+
+                    mrBaseSorter =
+                        v55SortData;
+                }
+
+            }catch(_){
+            }
+        }
+
+
+        window.v55SortData =
+            mrTotalDurationSorter;
+
+
+        try{
+
+            v55SortData =
+                mrTotalDurationSorter;
+
+        }catch(_){
+        }
+    }
+
+
+    function mrBindTotalDurationSelect(
+        select
+    ){
+
+        if(
+            select.dataset
+                .mrTotalDurationSortV1
+            ===
+            "1"
+        ){
+            return;
+        }
+
+
+        select.dataset
+            .mrTotalDurationSortV1 =
+            "1";
+
+
+        /*
+         * Capture=true:
+         *
+         * dla dwóch NOWYCH trybów zatrzymujemy stare
+         * handlery, które znają tylko osiem wcześniejszych
+         * wartości i mogłyby cofnąć wybór do "Najnowsze".
+         *
+         * Dla każdego starego trybu NIC nie przechwytujemy.
+         */
+
+        select.addEventListener(
+            "change",
+            event=>{
+
+                const mode =
+                    String(
+                        select.value
+                        || ""
+                    );
+
+
+                if(
+                    !MR_TOTAL_DURATION_MODES
+                    .has(
+                        mode
+                    )
+                ){
+                    return;
+                }
+
+
+                event.stopImmediatePropagation();
+
+
+                try{
+
+                    detectionPage = 1;
+
+                }catch(_){
+                }
+
+
+                if(
+                    typeof window
+                        .mrRenderGlobalDetectionPage
+                    ===
+                    "function"
+                ){
+
+                    window
+                        .mrRenderGlobalDetectionPage();
+
+                    return;
+                }
+
+
+                try{
+
+                    if(
+                        typeof v53ApplyFilter
+                        ===
+                        "function"
+                    ){
+
+                        v53ApplyFilter();
+
+                        return;
+                    }
+
+                }catch(_){
+                }
+
+
+                try{
+
+                    if(
+                        typeof refreshDetections
+                        ===
+                        "function"
+                    ){
+
+                        refreshDetections(
+                            true
+                        );
+                    }
+
+                }catch(_){
+                }
+
+            },
+            true
+        );
+    }
+
+
+    function mrEnsureTotalDurationOptions(){
+
+        const select =
+            document.getElementById(
+                "v55DetectionSort"
+            );
+
+
+        if(!select){
+            return;
+        }
+
+
+        let desc =
+            select.querySelector(
+                'option[value="duration_total_desc"]'
+            );
+
+
+        if(!desc){
+
+            desc =
+                document.createElement(
+                    "option"
+                );
+
+            desc.value =
+                "duration_total_desc";
+
+            desc.textContent =
+                "Czas ↓";
+        }
+
+
+        let asc =
+            select.querySelector(
+                'option[value="duration_total_asc"]'
+            );
+
+
+        if(!asc){
+
+            asc =
+                document.createElement(
+                    "option"
+                );
+
+            asc.value =
+                "duration_total_asc";
+
+            asc.textContent =
+                "Czas ↑";
+        }
+
+
+        const snrAsc =
+            select.querySelector(
+                'option[value="snr_asc"]'
+            );
+
+
+        if(snrAsc){
+
+            snrAsc.after(
+                desc
+            );
+
+            desc.after(
+                asc
+            );
+
+        }else{
+
+            select.append(
+                desc,
+                asc
+            );
+        }
+
+
+        mrBindTotalDurationSelect(
+            select
+        );
+
+
+        mrInstallTotalSorter();
+    }
+
+
+    /*
+     * Stare warstwy UI wykonują część poprawek po starcie.
+     * Dlatego wracamy kilka razy, ale tylko jednorazowo.
+     *
+     * Nie tworzymy żadnego stałego timera.
+     */
+
+    mrEnsureTotalDurationOptions();
+
+
+    [
+        600,
+        1800,
+        3600
+    ].forEach(
+        delay=>{
+
+            setTimeout(
+                mrEnsureTotalDurationOptions,
+                delay
+            );
+        }
+    );
+
+
+    console.log(
+        "MR TOTAL DURATION SORT V1 READY"
+    );
+
+})();
+</script>
 
 </body>
 </html>

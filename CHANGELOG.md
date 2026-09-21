@@ -1,5 +1,21 @@
 # Changelog
 
+## V5 — 2026-09-21 Golden refresh
+
+- refreshed the public station layer from the verified 2026-09-21 Golden
+- updated Adaptive Capture pre-trigger context to 3.0 s
+- added corrupt-NPZ validation to scoring and prerender
+- extended health monitoring to ports 8099 and 8100
+- added the 3D Spectrogram Viewer on port 8099
+- added the 3D Trajectory Analyzer on port 8100
+- moved receiver coordinates to local environment configuration
+- added RMOB-oriented export tooling
+- added new 8099 and 8100 screenshots
+- removed station-specific hostnames, private IP addresses and receiver coordinates
+- strengthened publication validation
+- kept the modified upstream acquisition core outside the public repository
+- confirmed private mobile-client components are absent from the public repository
+
 ## V5 — 2026-09-19
 
 - added sanitized project screenshots and GitHub showcase/discoverability documentation

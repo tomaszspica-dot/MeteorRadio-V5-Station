@@ -1891,14 +1891,14 @@ a.btn{
 
             <a
                 class="btn"
-                href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8094/'; return false;"
+                href="#" onclick="location.href='http://'+location.hostname+':8094/';return false;"
             >
                 MeteorRadio
             </a>
 
             <a
                 class="btn"
-                href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8096/'; return false;"
+                href="#" onclick="location.href='http://'+location.hostname+':8096/';return false;"
             >
                 Ulubione
             </a>

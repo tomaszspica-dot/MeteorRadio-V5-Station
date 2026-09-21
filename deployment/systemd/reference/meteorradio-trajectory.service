@@ -1,0 +1,28 @@
+[Unit]
+Description=MeteorRadio 3D Trajectory Analyzer
+After=network.target meteorradio-3d.service
+Requires=meteorradio-3d.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+EnvironmentFile=-/etc/default/meteorradio-trajectory
+WorkingDirectory=/home/pi/meteorradio-trajectory
+ExecStart=/usr/bin/python3 /home/pi/meteorradio-trajectory/server.py
+
+Restart=on-failure
+RestartSec=3
+
+Nice=12
+
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=NUMEXPR_NUM_THREADS=1
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

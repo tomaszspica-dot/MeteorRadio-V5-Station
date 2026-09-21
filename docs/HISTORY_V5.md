@@ -1,24 +1,33 @@
 # V5 reference history
 
-The V5 Golden was produced after a final audit and cleanup cycle.
+## Current verified Golden — 2026-09-21
 
 Reference snapshot:
 
-```text
+20260921_165532_GOLDEN
+
+Verification facts:
+
+- Golden manifest: 104 files
+- private Golden archive: about 9.1 MB compressed
+- Golden archive SHA256:
+  3c2017d085ad69b9331955bc8021436970b132f2e07bf2179bda75d096c56ee0
+- production NPZ validation passed
+- Python syntax validation passed
+- shell syntax validation passed
+- publication privacy validation passed
+- no private mobile-client modules in the public repository
+- no local hostname, private IP or receiver coordinates in the public repository
+- upstream acquisition core not vendored
+- documented public services: 8094, 8095, 8096, 8097, 8099 and 8100
+- no macOS Finder metadata in the publication tree
+
+The private Golden remains separate from the public GitHub repository.
+
+## Earlier V5 reference — 2026-09-19
+
+Earlier snapshot:
+
 20260919_023454_V5
-```
 
-Verification facts recorded at Golden creation:
-
-- Golden source files: 69
-- size: about 1.2 MB
-- Python snapshot syntax check: passed
-- critical live/copy hashes: matched
-- local HTTP endpoints 8094–8097: passed
-- persistent zombie gate: passed
-- current throttling/undervoltage flags: clear at snapshot time
-- score/likes/retention consistency: passed after cleanup
-- final SHA-256 manifest verification: passed
-- MeteorRadio acquisition process was not restarted during Golden creation
-
-The Golden intentionally excluded raw SMP observations and generated PNG cache.
+That snapshot preceded the final 3D analysis, RMOB export and Golden refresh.

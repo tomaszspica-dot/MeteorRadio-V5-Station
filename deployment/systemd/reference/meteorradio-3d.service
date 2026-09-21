@@ -1,0 +1,17 @@
+[Unit]
+Description=MeteorRadio 3D Spectrogram Viewer
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/meteorradio-3d
+ExecStart=/usr/bin/python3 /home/pi/meteorradio-3d/server.py
+Restart=on-failure
+RestartSec=3
+Nice=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

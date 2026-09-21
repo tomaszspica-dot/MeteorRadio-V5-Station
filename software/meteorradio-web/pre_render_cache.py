@@ -8,6 +8,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
+import zipfile
 
 from pathlib import Path
 
@@ -436,6 +437,54 @@ def cache_destination(src):
     )
 
 
+
+# ============================================================
+# MR_BAD_NPZ_GUARD_V1
+# ============================================================
+
+def npz_is_valid(src):
+
+    try:
+
+        if (
+            not src.is_file()
+            or
+            src.stat().st_size <= 0
+        ):
+            return False
+
+        if not zipfile.is_zipfile(src):
+            return False
+
+        with zipfile.ZipFile(src, "r") as zf:
+
+            names=set(zf.namelist())
+
+            required={
+                "samples.npy",
+                "sample_rate.npy",
+                "centre_freq.npy",
+            }
+
+            if not required.issubset(names):
+                return False
+
+            if zf.testzip() is not None:
+                return False
+
+        return True
+
+    except Exception as exc:
+
+        log(
+            "NPZ_VALIDATE_ERROR",
+            src.name,
+            repr(exc),
+        )
+
+        return False
+
+
 def needs_render(src):
 
     dst=cache_destination(
@@ -503,6 +552,16 @@ def next_candidate():
         if needs_render(
             src
         ):
+
+            # PRERENDER_SKIP_BAD_NPZ_V1
+            if not npz_is_valid(src):
+
+                log(
+                    "SKIP_BAD_NPZ",
+                    src.name,
+                )
+
+                continue
 
             return src
 

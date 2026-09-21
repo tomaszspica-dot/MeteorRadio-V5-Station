@@ -13,9 +13,9 @@ The main dashboard combines Raspberry Pi health, detection browsing, spectrum an
 
 ## Reference build
 
-- Reference snapshot: `20260919_023454_V5`
-- Golden manifest: 69 files
-- Golden size: about 1.2 MB (without raw SMP data and PNG cache)
+- Reference snapshot: `20260921_165532_GOLDEN`
+- Golden manifest: 104 files
+- Private Golden archive: about 9.1 MB compressed (runtime observations excluded)
 - Golden `SHA256SUMS.txt` SHA-256: `36dfebd31fec749266fa5f5b902635feef7bd75add4bd57c6205806f22c98b9f`
 - Target radio frequency: **143.050 MHz** (GRAVES)
 - Platform used for the reference station: Raspberry Pi 4, Debian/Trixie-class aarch64 system, RTL-SDR
@@ -23,7 +23,7 @@ The main dashboard combines Raspberry Pi health, detection browsing, spectrum an
 ## What V5 adds
 
 - `ADAPTIVE_CAPTURE_V2`
-  - 1.5 s pre-trigger context
+  - 3.0 s pre-trigger context
   - 0.8 s minimum post-trigger period
   - 1.0 s quiet/hang time
   - 10 s maximum post-trigger limit
@@ -33,7 +33,7 @@ The main dashboard combines Raspberry Pi health, detection browsing, spectrum an
 - manual deletion from the web UI
 - background pre-rendering of detection images
 - system health monitoring
-- four local web panels:
+- six public station web panels:
   - `8094` — main MeteorRadio detections UI
   - `8095` — scoring queue/status
   - `8096` — favourites/retention + full-size image modal
@@ -118,6 +118,22 @@ chmod +x VALIDATE_BEFORE_GITHUB.command
 ![MeteorRadio V5 GRAVES radio meteor detections gallery](assets/screenshots/detections-gallery-preview.png)
 
 [Open the full detection gallery screenshot](assets/screenshots/detections-gallery-full.png) · [More screenshots and UI notes](docs/SHOWCASE.md)
+
+## 3D analysis panels
+
+### 8099 — 3D Spectrogram Viewer
+
+![MeteorRadio 3D Spectrogram Viewer](assets/screenshots/spectrogram-3d-viewer.png)
+
+Read-only post-detection spectrogram inspection from saved NPZ observations.
+
+### 8100 — 3D Trajectory Analyzer
+
+![MeteorRadio 3D Trajectory Analyzer](assets/screenshots/trajectory-analyzer-v08.png)
+
+Single-station bistatic trajectory-family analysis. The result is a family of geometries compatible with measured Doppler evolution, not a unique physical trajectory.
+
+Receiver coordinates are intentionally excluded from the public source and supplied through environment variables.
 
 ## Documentation
 

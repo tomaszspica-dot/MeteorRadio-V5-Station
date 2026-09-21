@@ -54,6 +54,76 @@ for P in '/Users/tomek' 'Air-Tomasz' 'satnogspi' '192.168.1.102' 'BEGIN OPENSSH 
   fi
 done
 
+# Client-specific/private modules must never enter the public tree.
+BAD_PRIVATE_PATHS="$(
+  find . \
+    -path './.git' -prune -o \
+    -path './private_reference' -prune -o \
+    -type f \
+    \( -iname '*iphone*' \
+       -o -iname '*scriptable*' \
+    \) -print
+)"
+
+if [ -n "$BAD_PRIVATE_PATHS" ]; then
+  printf '%s\n' "$BAD_PRIVATE_PATHS"
+  fail "private client-specific files found"
+else
+  pass "no private client-specific files"
+fi
+
+for P in \
+  'iphone_widget_server' \
+  'meteorradio-iphone-widget' \
+  'Scriptable' \
+  '192.168.1.102' \
+  'satnogspi' \
+  '54.1875' \
+  '16.2083333333' \
+  'JO84ce' \
+  'Koszalin_North'
+do
+
+  if grep -RIl \
+      --exclude-dir=.git \
+      --exclude-dir=private_reference \
+      --exclude='validate_public_repo.sh' \
+      "$P" . >/dev/null 2>&1
+  then
+
+      grep -RIn \
+        --exclude-dir=.git \
+        --exclude-dir=private_reference \
+        --exclude='validate_public_repo.sh' \
+        "$P" . \
+        | head -20
+
+      fail "station/private pattern: $P"
+
+  else
+
+      pass "station/private pattern absent: $P"
+
+  fi
+
+done
+
+if find . \
+    -path './.git' -prune -o \
+    -type d \
+    -name 'cache.before-*' \
+    -print \
+    | grep -q .
+then
+
+    fail "historical cache.before-* directory found"
+
+else
+
+    pass "no historical cache.before-* directories"
+
+fi
+
 # Python syntax.
 PYCOUNT=0
 while IFS= read -r -d '' F; do

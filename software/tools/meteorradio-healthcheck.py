@@ -33,6 +33,8 @@ SERVICES = [
     "meteorradio-prerender.service",
     "meteorradio-retention.timer",
     "meteorradio-stats.service",
+    "meteorradio-3d.service",
+    "meteorradio-trajectory.service",
 ]
 
 
@@ -434,6 +436,17 @@ def main():
         "http://127.0.0.1:8097/"
     )
 
+    # MR_HEALTH_8099_8100_V1
+    viewer8099 = http_get(
+        "http://127.0.0.1:8099/healthz",
+        expect_json=True,
+    )
+
+    trajectory8100 = http_get(
+        "http://127.0.0.1:8100/healthz",
+        expect_json=True,
+    )
+
     # MR_HEALTH_COMPACT_HISTORY_V2
     #
     # Pełna odpowiedź JSON jest potrzebna lokalnie
@@ -454,6 +467,8 @@ def main():
         "8095": compact_http(queue),
         "8096": compact_http(likes),
         "8097": compact_http(stats8097),
+        "8099": compact_http(viewer8099),
+        "8100": compact_http(trajectory8100),
     }
 
 
@@ -667,6 +682,8 @@ def main():
         ("8095", queue),
         ("8096", likes),
         ("8097", stats8097),
+        ("8099", viewer8099),
+        ("8100", trajectory8100),
     ):
 
         if not result.get("ok"):
@@ -706,6 +723,8 @@ def main():
         "meteorradio-likes.service",
         "meteorradio-queue-status.service",
         "meteorradio-stats.service",
+        "meteorradio-3d.service",
+        "meteorradio-trajectory.service",
     ):
 
         s = services.get(

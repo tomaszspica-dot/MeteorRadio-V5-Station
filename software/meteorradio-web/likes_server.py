@@ -3,7 +3,6 @@
 # MR_LIKES_SCORE_1_7_V2
 
 import fcntl
-from urllib.parse import urlsplit
 import html
 import json
 import mimetypes
@@ -50,6 +49,20 @@ POLICY_DAYS={
 _IMAGE_MAP={}
 _IMAGE_MAP_TIME=0.0
 _IMAGE_MAP_LOCK=threading.Lock()
+
+
+# MR_8096_AUDIO_V3
+AUDIO_CACHE=CACHE/"audio"
+AUDIO_RENDER=BASE/"render_audio_v1.py"
+AUDIO_ORIGINAL_RENDER=BASE/"render_audio_original_v1.py"
+AUDIO_ORIGINAL_CACHE=CACHE/"audio-original"
+AUDIO_PY=Path("/home/pi/vMeteorRadio/bin/python")
+
+_AUDIO_BUILD_LOCK=threading.Lock()
+_AUDIO_ORIGINAL_BUILD_LOCK=threading.Lock()
+
+# MR_8096_AUDIO_DOWNLOAD_V1
+
 
 
 def load(path,default):
@@ -834,6 +847,385 @@ def manual_delete(name):
             )
 
 
+# MR_8096_AUDIO_V3
+
+def prune_audio_cache():
+
+    try:
+
+        AUDIO_CACHE.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        files=[]
+
+        for p in AUDIO_CACHE.glob(
+            "*.wav"
+        ):
+
+            try:
+
+                if p.is_file():
+                    files.append(p)
+
+            except OSError:
+                pass
+
+
+        files.sort(
+            key=lambda p:
+                p.stat().st_mtime,
+            reverse=True,
+        )
+
+
+        now=time.time()
+
+
+        for i,p in enumerate(files):
+
+            try:
+
+                age=(
+                    now
+                    -
+                    p.stat().st_mtime
+                )
+
+                if (
+                    i >= 128
+                    or
+                    age > 7*86400
+                ):
+                    p.unlink()
+
+            except FileNotFoundError:
+                pass
+
+            except OSError:
+                pass
+
+
+    except Exception as e:
+
+        print(
+            "AUDIO_CACHE_PRUNE_ERROR",
+            repr(e),
+            flush=True,
+        )
+
+
+
+def cached_audio(name):
+
+    name=safe_name(
+        name
+    )
+
+    src=RADAR/name
+
+
+    if not src.is_file():
+
+        raise FileNotFoundError(
+            name
+        )
+
+
+    AUDIO_CACHE.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+
+    dst=AUDIO_CACHE / (
+        Path(name).stem
+        +
+        "_usb.wav"
+    )
+
+
+    def current():
+
+        try:
+
+            return (
+                dst.is_file()
+                and
+                dst.stat().st_size > 44
+                and
+                dst.stat().st_mtime
+                >=
+                src.stat().st_mtime
+            )
+
+        except OSError:
+
+            return False
+
+
+    #
+    # Cache hit = zero DSP.
+    #
+    if current():
+
+        return dst
+
+
+    #
+    # Maksymalnie jedna generacja naraz.
+    #
+    with _AUDIO_BUILD_LOCK:
+
+        if current():
+
+            return dst
+
+
+        if not AUDIO_RENDER.is_file():
+
+            raise RuntimeError(
+                "Brak render_audio_v1.py"
+            )
+
+
+        if not AUDIO_PY.is_file():
+
+            raise RuntimeError(
+                "Brak Python vMeteorRadio"
+            )
+
+
+        cmd=[
+            "/usr/bin/nice",
+            "-n",
+            "10",
+            str(AUDIO_PY),
+            str(AUDIO_RENDER),
+            str(src),
+            str(dst),
+        ]
+
+
+        started=time.monotonic()
+
+
+        r=subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+
+
+        elapsed=(
+            time.monotonic()
+            -
+            started
+        )
+
+
+        if r.returncode != 0:
+
+            raise RuntimeError(
+                "Audio render failed: "
+                +
+                (
+                    r.stdout
+                    or
+                    ""
+                ).strip()
+            )
+
+
+        if not current():
+
+            raise RuntimeError(
+                "Nie powstał poprawny WAV"
+            )
+
+
+        print(
+            "AUDIO_RENDER",
+            name,
+            f"{elapsed:.3f}s",
+            (
+                r.stdout
+                or
+                ""
+            ).strip(),
+            flush=True,
+        )
+
+
+        prune_audio_cache()
+
+
+        return dst
+
+
+
+# MR_8096_AUDIO_DOWNLOAD_V1
+
+def cached_original_audio(name):
+
+    name=safe_name(
+        name
+    )
+
+
+    src=RADAR/name
+
+
+    if not src.is_file():
+
+        raise FileNotFoundError(
+            name
+        )
+
+
+    AUDIO_ORIGINAL_CACHE.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+
+    dst=AUDIO_ORIGINAL_CACHE / (
+        Path(name).stem
+        +
+        "_original_usb.wav"
+    )
+
+
+    def current():
+
+        try:
+
+            return (
+                dst.is_file()
+                and
+                dst.stat().st_size > 44
+                and
+                dst.stat().st_mtime
+                >=
+                src.stat().st_mtime
+            )
+
+        except OSError:
+
+            return False
+
+
+    if current():
+
+        return dst
+
+
+    with _AUDIO_ORIGINAL_BUILD_LOCK:
+
+        if current():
+
+            return dst
+
+
+        if not AUDIO_ORIGINAL_RENDER.is_file():
+
+            raise RuntimeError(
+                "Brak render_audio_original_v1.py"
+            )
+
+
+        cmd=[
+            "/usr/bin/nice",
+            "-n",
+            "10",
+            str(AUDIO_PY),
+            str(AUDIO_ORIGINAL_RENDER),
+            str(src),
+            str(dst),
+        ]
+
+
+        r=subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+
+
+        if r.returncode != 0:
+
+            raise RuntimeError(
+                "Original audio render failed: "
+                +
+                (
+                    r.stdout
+                    or
+                    ""
+                ).strip()
+            )
+
+
+        if not current():
+
+            raise RuntimeError(
+                "Nie powstał poprawny oryginalny WAV"
+            )
+
+
+        print(
+            "AUDIO_ORIGINAL_RENDER",
+            name,
+            (
+                r.stdout
+                or
+                ""
+            ).strip(),
+            flush=True,
+        )
+
+
+        #
+        # Osobny mały cache.
+        #
+        try:
+
+            files=sorted(
+                [
+                    p
+                    for p
+                    in AUDIO_ORIGINAL_CACHE.glob(
+                        "*.wav"
+                    )
+                    if p.is_file()
+                ],
+                key=lambda p:
+                    p.stat().st_mtime,
+                reverse=True,
+            )
+
+
+            for old in files[128:]:
+
+                try:
+                    old.unlink()
+                except OSError:
+                    pass
+
+        except Exception:
+            pass
+
+
+        return dst
+
+
+
 def rebuild_image_map():
 
     global _IMAGE_MAP
@@ -1156,6 +1548,80 @@ h1{
     font-weight:700;
     font-size:16px;
     flex:1 1 auto;
+}
+
+/* MR_8096_AUDIO_V3 */
+
+/* MR_8096_IQ_DOWNLOAD_V1 */
+
+.iq-download{
+    border:1px solid #507891;
+    border-radius:4px;
+    background:#132733;
+    color:#9fe0ff;
+    font-family:monospace;
+    font-size:11px;
+    font-weight:800;
+    line-height:1;
+    padding:4px 5px;
+    min-width:28px;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.iq-download:hover{
+    background:#1e3b4d;
+    color:#ffffff;
+}
+
+
+/* MR_8096_AUDIO_DOWNLOAD_V1 */
+
+.audio-download{
+    border:0;
+    background:transparent;
+    color:#8fd3ff;
+    font-size:22px;
+    line-height:1;
+    padding:0 3px;
+    min-width:28px;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.audio-download:hover{
+    color:#ffffff;
+    transform:translateY(1px);
+}
+
+.audio-play{
+    border:0;
+    background:transparent;
+    color:#f1f1f1;
+    font-size:22px;
+    line-height:1;
+    padding:0 3px;
+    min-width:28px;
+    cursor:pointer;
+}
+
+.audio-play:hover{
+    transform:scale(1.08);
+}
+
+.audio-play.playing{
+    color:#67d5ff;
+}
+
+.audio-play:disabled{
+    opacity:.55;
+    cursor:wait;
 }
 
 .delete{
@@ -1493,14 +1959,14 @@ body.mr-image-modal-open{
 
         <a
             class="mr-nav-btn"
-            href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8094/'; return false;"
+            href="#" onclick="location.href='http://'+location.hostname+':8094/';return false;"
         >
             MeteorRadio
         </a>
 
         <a
             class="mr-nav-btn"
-            href="#" onclick="location.href=location.protocol+'//'+location.hostname+':8097/'; return false;"
+            href="#" onclick="location.href='http://'+location.hostname+':8097/';return false;"
         >
             Statystyki
         </a>
@@ -1611,6 +2077,61 @@ let DATA={
 };
 
 let FILTER="all";
+
+
+/* MR_8096_AUDIO_V3 */
+
+let MR_AUDIO=null;
+let MR_AUDIO_BUTTON=null;
+
+
+function mrStopAudio(){
+
+    const audio=
+        MR_AUDIO;
+
+    const button=
+        MR_AUDIO_BUTTON;
+
+
+    MR_AUDIO=null;
+    MR_AUDIO_BUTTON=null;
+
+
+    if(audio){
+
+        try{
+            audio.pause();
+        }catch(_){}
+
+        try{
+
+            audio.removeAttribute(
+                "src"
+            );
+
+            audio.load();
+
+        }catch(_){}
+    }
+
+
+    if(button){
+
+        button.disabled=false;
+
+        button.classList.remove(
+            "playing"
+        );
+
+        button.textContent=
+            "🔊";
+
+        button.title=
+            "Odsłuch USB / Doppler";
+    }
+}
+
 
 
 
@@ -1974,6 +2495,8 @@ function visible(item){
 
 function render(){
 
+    mrStopAudio();
+
     const grid=
         document.getElementById(
             "grid"
@@ -2035,6 +2558,28 @@ function render(){
                             Ocena ${item.score}
                         </div>
 
+                        <a
+                            class="iq-download"
+                            href="/smp-original?file=${file}"
+                            title="Pobierz oryginalny SMP / complex IQ"
+                            aria-label="Pobierz oryginalny SMP / complex IQ"
+                        >IQ</a>
+
+                        <a
+                            class="audio-download"
+                            href="/audio-original?file=${file}"
+                            title="Pobierz oryginalny niefiltrowany WAV"
+                            aria-label="Pobierz oryginalny niefiltrowany WAV"
+                        >⬇</a>
+
+                        <button
+                            type="button"
+                            class="audio-play"
+                            title="Odsłuch USB / Doppler"
+                            aria-label="Odsłuch USB / Doppler"
+                            data-file="${esc(item.file)}"
+                        >🔊</button>
+
                         <button
                             type="button"
                             class="delete"
@@ -2062,6 +2607,171 @@ function render(){
             </article>`;
         }
     ).join("");
+
+
+    /* MR_8096_AUDIO_V3 */
+
+    document.querySelectorAll(
+        ".audio-play"
+    ).forEach(
+
+        b=>{
+
+            b.onclick=async()=>{
+
+                const file=
+                    b.dataset.file;
+
+
+                /*
+                 * Ten sam przycisk:
+                 * play -> stop.
+                 */
+                if(
+                    MR_AUDIO_BUTTON
+                    ===
+                    b
+                ){
+
+                    mrStopAudio();
+
+                    return;
+                }
+
+
+                /*
+                 * Jeden klip naraz.
+                 */
+                mrStopAudio();
+
+
+                b.disabled=true;
+
+                b.textContent=
+                    "…";
+
+                b.title=
+                    "Przygotowuję USB audio…";
+
+
+                const audio=
+                    new Audio();
+
+
+                audio.preload=
+                    "none";
+
+                audio.volume=
+                    0.90;
+
+
+                audio.src=
+                    "/audio?file="
+                    +
+                    encodeURIComponent(
+                        file
+                    );
+
+
+                MR_AUDIO=
+                    audio;
+
+                MR_AUDIO_BUTTON=
+                    b;
+
+
+                audio.onplaying=()=>{
+
+                    if(
+                        MR_AUDIO
+                        !==
+                        audio
+                    ){
+                        return;
+                    }
+
+
+                    b.disabled=false;
+
+                    b.classList.add(
+                        "playing"
+                    );
+
+                    b.textContent=
+                        "⏹";
+
+                    b.title=
+                        "Zatrzymaj odsłuch";
+                };
+
+
+                audio.onended=()=>{
+
+                    if(
+                        MR_AUDIO
+                        ===
+                        audio
+                    ){
+
+                        mrStopAudio();
+                    }
+                };
+
+
+                audio.onerror=()=>{
+
+                    if(
+                        MR_AUDIO
+                        !==
+                        audio
+                    ){
+                        return;
+                    }
+
+
+                    mrStopAudio();
+
+
+                    alert(
+                        "Nie udało się odtworzyć "
+                        +
+                        "audio tej detekcji."
+                    );
+                };
+
+
+                try{
+
+                    await audio.play();
+
+                }catch(e){
+
+                    if(
+                        MR_AUDIO
+                        ===
+                        audio
+                    ){
+
+                        mrStopAudio();
+
+                        alert(
+                            "Nie udało się uruchomić odsłuchu:\n\n"
+                            +
+                            (
+                                e
+                                &&
+                                e.message
+                                ?
+                                e.message
+                                :
+                                String(e)
+                            )
+                        );
+                    }
+                }
+            };
+        }
+    );
 
 
     document.querySelectorAll(
@@ -2500,6 +3210,529 @@ void 0; /* MR_8096_AUTO_REFRESH_DISABLED_V1 */
 
 </script>
 
+
+<!-- MR_8096_DURATION_UI_V1 -->
+<script>
+(() => {
+
+    const DURATION_MARK =
+        "mrDurationBound";
+
+
+    const observer =
+        new IntersectionObserver(
+            entries => {
+
+                for (const entry of entries) {
+
+                    if (!entry.isIntersecting) {
+                        continue;
+                    }
+
+                    observer.unobserve(
+                        entry.target
+                    );
+
+                    loadDuration(
+                        entry.target
+                    );
+                }
+            },
+            {
+                rootMargin: "250px"
+            }
+        );
+
+
+    function scoreElement(
+        iq
+    ) {
+
+        let root=
+            iq.parentElement;
+
+
+        for (
+            let level=0;
+            root && level<7;
+            level++,
+            root=root.parentElement
+        ) {
+
+            const all=[
+                root,
+                ...root.querySelectorAll("*")
+            ];
+
+
+            for (
+                const el
+                of
+                all
+            ) {
+
+                if (
+                    el.children.length
+                    !==
+                    0
+                ) {
+                    continue;
+                }
+
+
+                const text=(
+                    el.textContent
+                    ||
+                    ""
+                ).trim();
+
+
+                if (
+                    /^Ocena\s+[1-7]$/
+                    .test(
+                        text
+                    )
+                ) {
+
+                    return el;
+                }
+            }
+        }
+
+
+        return null;
+    }
+
+
+    async function loadDuration(
+        iq
+    ) {
+
+        const score=
+            scoreElement(
+                iq
+            );
+
+
+        if (!score) {
+            return;
+        }
+
+
+        if (
+            score.parentElement
+            &&
+            score.parentElement
+                .querySelector(
+                    ".mr-detection-duration"
+                )
+        ) {
+
+            return;
+        }
+
+
+        const href=
+            iq.getAttribute(
+                "href"
+            )
+            ||
+            "";
+
+
+        let file="";
+
+
+        try {
+
+            const url=
+                new URL(
+                    href,
+                    window.location.href
+                );
+
+            file=
+                url.searchParams.get(
+                    "file"
+                )
+                ||
+                "";
+
+        } catch (_) {
+
+            return;
+        }
+
+
+        if (!file) {
+            return;
+        }
+
+
+        try {
+
+            const r=
+                await fetch(
+                    "/duration?v=2&file="
+                    +
+                    encodeURIComponent(
+                        file
+                    ),
+                    {
+                        cache:
+                            "force-cache"
+                    }
+                );
+
+
+            if (!r.ok) {
+                return;
+            }
+
+
+            const d=
+                await r.json();
+
+
+            const seconds=
+                Number(
+                    d.seconds
+                );
+
+
+            if (
+                !Number.isFinite(
+                    seconds
+                )
+                ||
+                seconds <= 0
+            ) {
+
+                return;
+            }
+
+
+            const span=
+                document.createElement(
+                    "span"
+                );
+
+
+            span.className=
+                "mr-detection-duration";
+
+
+            span.style.marginLeft=
+                "6px";
+
+            span.style.fontSize=
+                "12px";
+
+            span.style.fontWeight=
+                "500";
+
+            span.style.color=
+                "#9aa6b2";
+
+            span.style.whiteSpace=
+                "nowrap";
+
+
+            span.textContent=
+                ""
+                +
+                seconds
+                    .toFixed(2)
+                    .replace(
+                        ".",
+                        ","
+                    )
+                +
+                " s";
+
+
+            score.insertAdjacentElement(
+                "afterend",
+                span
+            );
+
+
+        } catch (_) {
+
+            /*
+             * Brak wartości nie może
+             * wpłynąć na działanie karty.
+             */
+        }
+    }
+
+
+    function scan() {
+
+        document
+            .querySelectorAll(
+                "a.iq-download"
+            )
+            .forEach(
+                iq => {
+
+                    if (
+                        iq.dataset[
+                            DURATION_MARK
+                        ]
+                    ) {
+                        return;
+                    }
+
+
+                    iq.dataset[
+                        DURATION_MARK
+                    ]="1";
+
+
+                    observer.observe(
+                        iq
+                    );
+                }
+            );
+    }
+
+
+    scan();
+
+
+    const mutations=
+        new MutationObserver(
+            () => {
+                scan();
+            }
+        );
+
+
+    mutations.observe(
+        document.body,
+        {
+            childList: true,
+            subtree: true
+        }
+    );
+
+})();
+</script>
+
+
+<!-- MR_8096_TRIGGER_TIME_V5_FRONTEND -->
+<script>
+(() => {
+
+    const FLAG =
+        "mrTriggerTimeV5";
+
+
+    async function loadTriggerTime(
+        card
+    ) {
+
+        const name =
+            String(
+                card.dataset.file
+                ||
+                ""
+            );
+
+
+        const line =
+            card.querySelector(
+                ".filename"
+            );
+
+
+        if (
+            !name
+            ||
+            !line
+        ) {
+
+            return;
+        }
+
+
+        /*
+         * Do czasu odpowiedzi API zostaje
+         * obecna nazwa pliku.
+         *
+         * Przy błędzie również zostaje,
+         * więc karta nadal jest użyteczna.
+         */
+
+        line.title =
+            "Plik: "
+            +
+            name;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/trigger-time?v=5&file="
+                    +
+                    encodeURIComponent(
+                        name
+                    ),
+                    {
+                        cache:
+                            "force-cache"
+                    }
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                return;
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !data
+                ||
+                !data.ok
+                ||
+                !data.display
+            ) {
+
+                return;
+            }
+
+
+            line.textContent =
+                String(
+                    data.display
+                );
+
+
+            line.title =
+                "Trigger: "
+                +
+                String(
+                    data.trigger_time
+                    ||
+                    data.display
+                )
+                +
+                "\nPlik: "
+                +
+                name;
+
+
+        } catch (_) {
+
+            /*
+             * Nic nie zmieniamy —
+             * nazwa SMP pozostaje widoczna.
+             */
+        }
+    }
+
+
+    const observer =
+        new IntersectionObserver(
+            entries => {
+
+                for (
+                    const entry
+                    of entries
+                ) {
+
+                    if (
+                        !entry.isIntersecting
+                    ) {
+
+                        continue;
+                    }
+
+
+                    observer.unobserve(
+                        entry.target
+                    );
+
+
+                    loadTriggerTime(
+                        entry.target
+                    );
+                }
+            },
+            {
+                rootMargin:
+                    "250px"
+            }
+        );
+
+
+    function scan() {
+
+        document
+            .querySelectorAll(
+                ".card[data-file]"
+            )
+            .forEach(
+                card => {
+
+                    if (
+                        card.dataset[
+                            FLAG
+                        ]
+                        ===
+                        "1"
+                    ) {
+
+                        return;
+                    }
+
+
+                    card.dataset[
+                        FLAG
+                    ] =
+                        "1";
+
+
+                    observer.observe(
+                        card
+                    );
+                }
+            );
+    }
+
+
+    scan();
+
+
+    const mutations =
+        new MutationObserver(
+            scan
+        );
+
+
+    mutations.observe(
+        document.body,
+        {
+            childList:
+                true,
+
+            subtree:
+                true
+        }
+    );
+
+})();
+</script>
+
 </body>
 </html>
 '''
@@ -2557,17 +3790,25 @@ class Handler(
 
 
 
-        # MR_LIKES_CORS_8094_V1
+        # MR_LIKES_CORS_PUBLIC_V2
         #
-        # Pozwalamy wyłącznie naszym lokalnym
-        # wariantom panelu 8094 odczytać wynik
-        # prostego requestu POST/GET.
+        # Public build:
+        # accept port 8094 on the same hostname
+        # as the current request. Additional
+        # origins may be supplied through:
+        #
+        # METEORRADIO_ALLOWED_ORIGINS
         #
         _origin=self.headers.get(
             "Origin"
         )
 
-        _origin_ok=False
+        _host_header=self.headers.get(
+            "Host",
+            ""
+        )
+
+        _same_host=False
 
         if _origin:
 
@@ -2577,54 +3818,67 @@ class Handler(
                     _origin
                 )
 
-                _request_url=urlsplit(
-                    "//"
+                _host_url=urlsplit(
+                    "http://"
                     +
-                    self.headers.get(
-                        "Host",
-                        ""
-                    )
+                    _host_header
                 )
 
                 _origin_port=(
                     _origin_url.port
-                    if _origin_url.port is not None
-                    else (
+                    or
+                    (
                         443
-                        if _origin_url.scheme == "https"
-                        else 80
+                        if
+                        _origin_url.scheme
+                        ==
+                        "https"
+                        else
+                        80
                     )
                 )
 
-                _origin_host=(
+                _same_host=bool(
                     _origin_url.hostname
-                    or
-                    ""
-                ).lower()
-
-                _request_host=(
-                    _request_url.hostname
-                    or
-                    ""
-                ).lower()
-
-                _origin_ok=(
-                    _origin_url.scheme
-                    in (
-                        "http",
-                        "https",
-                    )
                     and
-                    _origin_port == 8094
+                    _host_url.hostname
                     and
-                    _origin_host == _request_host
+                    _origin_url.hostname.lower()
+                    ==
+                    _host_url.hostname.lower()
+                    and
+                    _origin_port
+                    ==
+                    8094
                 )
 
             except Exception:
 
-                _origin_ok=False
+                _same_host=False
 
-        if _origin_ok:
+
+        _extra_origins={
+            item.strip()
+            for item
+            in os.environ.get(
+                "METEORRADIO_ALLOWED_ORIGINS",
+                ""
+            ).split(",")
+            if item.strip()
+        }
+
+
+        if (
+            _origin
+            and
+            (
+                _same_host
+                or
+                _origin
+                in
+                _extra_origins
+            )
+        ):
 
             self.send_header(
                 "Access-Control-Allow-Origin",
@@ -2635,6 +3889,7 @@ class Handler(
                 "Vary",
                 "Origin"
             )
+
         self.end_headers()
 
         self.wfile.write(
@@ -2723,6 +3978,1288 @@ class Handler(
                         "score-1-7-ttl"
                 }
             )
+
+
+        # MR_8096_DURATION_UI_V1
+        # MR_8096_TOTAL_CAPTURE_DURATION_V2
+        # MR_8096_TRIGGER_TIME_V5_BACKEND
+        if path == "/trigger-time":
+
+            import ast as _ast
+            import datetime as _datetime
+            import json as _json
+            import math as _math
+            import struct as _struct
+            import sys as _sys
+            import zipfile as _zipfile
+
+
+            name=(
+                q.get(
+                    "file",
+                    [""]
+                )[0]
+            )
+
+
+            try:
+
+                name=safe_name(
+                    name
+                )
+
+
+                src=RADAR/name
+
+
+                if not src.is_file():
+
+                    raise FileNotFoundError(
+                        name
+                    )
+
+
+                def _mr_npy_header(
+                    fp
+                ):
+
+                    magic=fp.read(
+                        6
+                    )
+
+
+                    if (
+                        magic
+                        !=
+                        bytes(
+                            (147,)
+                        )
+                        +
+                        b"NUMPY"
+                    ):
+
+                        raise ValueError(
+                            "invalid NPY magic"
+                        )
+
+
+                    version=fp.read(
+                        2
+                    )
+
+
+                    if len(
+                        version
+                    ) != 2:
+
+                        raise ValueError(
+                            "invalid NPY version"
+                        )
+
+
+                    major=version[0]
+
+
+                    if major == 1:
+
+                        raw_len=fp.read(
+                            2
+                        )
+
+
+                        if len(
+                            raw_len
+                        ) != 2:
+
+                            raise ValueError(
+                                "short NPY header length"
+                            )
+
+
+                        header_len=(
+                            _struct.unpack(
+                                "<H",
+                                raw_len
+                            )[0]
+                        )
+
+
+                    elif major in (
+                        2,
+                        3
+                    ):
+
+                        raw_len=fp.read(
+                            4
+                        )
+
+
+                        if len(
+                            raw_len
+                        ) != 4:
+
+                            raise ValueError(
+                                "short NPY header length"
+                            )
+
+
+                        header_len=(
+                            _struct.unpack(
+                                "<I",
+                                raw_len
+                            )[0]
+                        )
+
+
+                    else:
+
+                        raise ValueError(
+                            "unsupported NPY version"
+                        )
+
+
+                    raw_header=fp.read(
+                        header_len
+                    )
+
+
+                    if len(
+                        raw_header
+                    ) != header_len:
+
+                        raise ValueError(
+                            "short NPY header"
+                        )
+
+
+                    encoding=(
+                        "utf-8"
+                        if major == 3
+                        else
+                        "latin1"
+                    )
+
+
+                    return _ast.literal_eval(
+                        raw_header
+                        .decode(
+                            encoding
+                        )
+                        .strip()
+                    )
+
+
+                def _mr_npy_text_scalar(
+                    fp
+                ):
+
+                    header=_mr_npy_header(
+                        fp
+                    )
+
+
+                    descr=str(
+                        header.get(
+                            "descr",
+                            ""
+                        )
+                    )
+
+
+                    shape=header.get(
+                        "shape",
+                        ()
+                    )
+
+
+                    count=(
+                        _math.prod(
+                            shape
+                        )
+                        if shape
+                        else
+                        1
+                    )
+
+
+                    if count != 1:
+
+                        raise ValueError(
+                            "trigger_time must be scalar"
+                        )
+
+
+                    if descr.startswith(
+                        "<U"
+                    ):
+
+                        chars=int(
+                            descr[2:]
+                        )
+
+                        value=(
+                            fp.read(
+                                chars * 4
+                            )
+                            .decode(
+                                "utf-32-le"
+                            )
+                        )
+
+
+                    elif descr.startswith(
+                        ">U"
+                    ):
+
+                        chars=int(
+                            descr[2:]
+                        )
+
+                        value=(
+                            fp.read(
+                                chars * 4
+                            )
+                            .decode(
+                                "utf-32-be"
+                            )
+                        )
+
+
+                    elif descr.startswith(
+                        "=U"
+                    ):
+
+                        chars=int(
+                            descr[2:]
+                        )
+
+
+                        encoding=(
+                            "utf-32-le"
+                            if _sys.byteorder
+                            ==
+                            "little"
+                            else
+                            "utf-32-be"
+                        )
+
+
+                        value=(
+                            fp.read(
+                                chars * 4
+                            )
+                            .decode(
+                                encoding
+                            )
+                        )
+
+
+                    elif descr.startswith(
+                        "|S"
+                    ):
+
+                        chars=int(
+                            descr[2:]
+                        )
+
+                        value=(
+                            fp.read(
+                                chars
+                            )
+                            .decode(
+                                "utf-8",
+                                errors="replace"
+                            )
+                        )
+
+
+                    else:
+
+                        raise ValueError(
+                            "unsupported trigger dtype: "
+                            +
+                            descr
+                        )
+
+
+                    return (
+                        value
+                        .rstrip(
+                            "\x00"
+                        )
+                        .strip()
+                    )
+
+
+                with _zipfile.ZipFile(
+                    src,
+                    "r"
+                ) as archive:
+
+
+                    names=set(
+                        archive.namelist()
+                    )
+
+
+                    selected=None
+
+
+                    #
+                    # Pierwszy wybór:
+                    # rzeczywisty trigger detekcji.
+                    #
+                    # Fallback:
+                    # trigger całego eventu V3.
+                    #
+
+                    for candidate in (
+                        "trigger_time.npy",
+                        "adaptive_event_trigger_time.npy",
+                    ):
+
+                        if candidate in names:
+
+                            selected=candidate
+
+                            break
+
+
+                    if selected is None:
+
+                        raise KeyError(
+                            "trigger_time"
+                        )
+
+
+                    with archive.open(
+                        selected,
+                        "r"
+                    ) as fp:
+
+                        trigger=(
+                            _mr_npy_text_scalar(
+                                fp
+                            )
+                        )
+
+
+                if not trigger:
+
+                    raise ValueError(
+                        "empty trigger_time"
+                    )
+
+
+                dt=(
+                    _datetime.datetime
+                    .fromisoformat(
+                        trigger.replace(
+                            "Z",
+                            "+00:00"
+                        )
+                    )
+                )
+
+
+                display=(
+                    dt.strftime(
+                        "%d.%m.%Y %H:%M:%S"
+                    )
+                )
+
+
+                body=_json.dumps(
+                    {
+                        "ok":
+                            True,
+
+                        "trigger_time":
+                            trigger,
+
+                        "display":
+                            display,
+
+                        "field":
+                            selected[:-4],
+                    },
+                    ensure_ascii=False,
+                    separators=(
+                        ",",
+                        ":"
+                    ),
+                ).encode(
+                    "utf-8"
+                )
+
+
+                self.send_response(
+                    200
+                )
+
+
+                self.send_header(
+                    "Content-Type",
+                    "application/json; charset=utf-8"
+                )
+
+
+                self.send_header(
+                    "Content-Length",
+                    str(
+                        len(body)
+                    )
+                )
+
+
+                self.send_header(
+                    "Cache-Control",
+                    "private, max-age=86400"
+                )
+
+
+                self.end_headers()
+
+
+                self.wfile.write(
+                    body
+                )
+
+
+                return
+
+
+            except FileNotFoundError:
+
+                self.send_error(
+                    404
+                )
+
+                return
+
+
+            except (
+                KeyError,
+                ValueError,
+                TypeError,
+                _zipfile.BadZipFile,
+            ) as e:
+
+                print(
+                    "TRIGGER_TIME_PARSE_ERROR",
+                    name,
+                    repr(e),
+                    flush=True
+                )
+
+
+                self.send_error(
+                    422
+                )
+
+
+                return
+
+
+            except Exception as e:
+
+                print(
+                    "TRIGGER_TIME_HTTP_ERROR",
+                    name,
+                    repr(e),
+                    flush=True
+                )
+
+
+                self.send_error(
+                    500
+                )
+
+
+                return
+
+        if path == "/duration":
+
+            import ast as _ast
+            import json as _json
+            import math as _math
+            import struct as _struct
+            import zipfile as _zipfile
+
+
+            name=(
+                q.get(
+                    "file",
+                    [""]
+                )[0]
+            )
+
+
+            try:
+
+                name=safe_name(
+                    name
+                )
+
+
+                src=RADAR/name
+
+
+                if not src.is_file():
+
+                    raise FileNotFoundError(
+                        name
+                    )
+
+
+                def _read_npy_header(
+                    _fp
+                ):
+
+                    _magic=_fp.read(
+                        6
+                    )
+
+
+                    _expected=(
+                        bytes(
+                            (147,)
+                        )
+                        +
+                        b"NUMPY"
+                    )
+
+
+                    if _magic != _expected:
+
+                        raise ValueError(
+                            "invalid NPY magic"
+                        )
+
+
+                    _version=_fp.read(
+                        2
+                    )
+
+
+                    if len(
+                        _version
+                    ) != 2:
+
+                        raise ValueError(
+                            "invalid NPY version"
+                        )
+
+
+                    _major=_version[0]
+
+
+                    if _major == 1:
+
+                        _raw=_fp.read(
+                            2
+                        )
+
+                        if len(_raw) != 2:
+                            raise ValueError(
+                                "invalid header length"
+                            )
+
+                        _hlen=_struct.unpack(
+                            "<H",
+                            _raw
+                        )[0]
+
+
+                    elif _major in (
+                        2,
+                        3
+                    ):
+
+                        _raw=_fp.read(
+                            4
+                        )
+
+                        if len(_raw) != 4:
+                            raise ValueError(
+                                "invalid header length"
+                            )
+
+                        _hlen=_struct.unpack(
+                            "<I",
+                            _raw
+                        )[0]
+
+
+                    else:
+
+                        raise ValueError(
+                            "unsupported NPY version"
+                        )
+
+
+                    _raw_header=_fp.read(
+                        _hlen
+                    )
+
+
+                    if len(
+                        _raw_header
+                    ) != _hlen:
+
+                        raise ValueError(
+                            "short NPY header"
+                        )
+
+
+                    _encoding=(
+                        "utf-8"
+                        if _major == 3
+                        else
+                        "latin1"
+                    )
+
+
+                    return _ast.literal_eval(
+                        _raw_header
+                        .decode(
+                            _encoding
+                        )
+                        .strip()
+                    )
+
+
+                def _read_npy_scalar(
+                    _fp
+                ):
+
+                    _h=_read_npy_header(
+                        _fp
+                    )
+
+
+                    _descr=str(
+                        _h[
+                            "descr"
+                        ]
+                    )
+
+
+                    if (
+                        _descr
+                        and
+                        _descr[0]
+                        in "<>=|"
+                    ):
+
+                        _endian=_descr[0]
+                        _core=_descr[1:]
+
+                    else:
+
+                        _endian="="
+                        _core=_descr
+
+
+                    if len(
+                        _core
+                    ) < 2:
+
+                        raise ValueError(
+                            "invalid scalar dtype"
+                        )
+
+
+                    _kind=_core[0]
+                    _size=int(
+                        _core[1:]
+                    )
+
+
+                    _formats={
+                        ("f",4): "f",
+                        ("f",8): "d",
+                        ("i",4): "i",
+                        ("i",8): "q",
+                        ("u",4): "I",
+                        ("u",8): "Q",
+                    }
+
+
+                    _code=_formats.get(
+                        (
+                            _kind,
+                            _size
+                        )
+                    )
+
+
+                    if _code is None:
+
+                        raise ValueError(
+                            "unsupported scalar dtype"
+                        )
+
+
+                    if _endian == ">":
+                        _prefix=">"
+                    elif _endian == "<":
+                        _prefix="<"
+                    else:
+                        _prefix="="
+
+
+                    _raw=_fp.read(
+                        _size
+                    )
+
+
+                    if len(
+                        _raw
+                    ) != _size:
+
+                        raise ValueError(
+                            "short scalar data"
+                        )
+
+
+                    return _struct.unpack(
+                        _prefix + _code,
+                        _raw
+                    )[0]
+
+
+                #
+                # Czytamy tylko:
+                #
+                # samples.npy -> HEADER / shape
+                # sample_rate.npy -> pojedynczą wartość
+                #
+                # Nie ładujemy tablicy IQ.
+                #
+                with _zipfile.ZipFile(
+                    src,
+                    "r"
+                ) as _zf:
+
+
+                    with _zf.open(
+                        "samples.npy"
+                    ) as _fp:
+
+                        _samples_header=(
+                            _read_npy_header(
+                                _fp
+                            )
+                        )
+
+
+                    _shape=tuple(
+                        int(_x)
+                        for _x
+                        in _samples_header[
+                            "shape"
+                        ]
+                    )
+
+
+                    if not _shape:
+
+                        raise ValueError(
+                            "empty samples shape"
+                        )
+
+
+                    _sample_count=(
+                        _math.prod(
+                            _shape
+                        )
+                    )
+
+
+                    with _zf.open(
+                        "sample_rate.npy"
+                    ) as _fp:
+
+                        _sample_rate=float(
+                            _read_npy_scalar(
+                                _fp
+                            )
+                        )
+
+
+                if (
+                    _sample_count <= 0
+                    or
+                    _sample_rate <= 0
+                ):
+
+                    raise ValueError(
+                        "invalid capture dimensions"
+                    )
+
+
+                seconds=(
+                    float(
+                        _sample_count
+                    )
+                    /
+                    _sample_rate
+                )
+
+
+                if (
+                    not _math.isfinite(
+                        seconds
+                    )
+                    or
+                    seconds <= 0
+                ):
+
+                    raise ValueError(
+                        "invalid duration"
+                    )
+
+
+                body=_json.dumps(
+                    {
+                        "ok": True,
+                        "seconds": seconds,
+                        "source": "samples/sample_rate",
+                    },
+                    ensure_ascii=False,
+                    separators=(
+                        ",",
+                        ":"
+                    ),
+                ).encode(
+                    "utf-8"
+                )
+
+
+                self.send_response(
+                    200
+                )
+
+                self.send_header(
+                    "Content-Type",
+                    "application/json; charset=utf-8"
+                )
+
+                self.send_header(
+                    "Content-Length",
+                    str(
+                        len(body)
+                    )
+                )
+
+                self.send_header(
+                    "Cache-Control",
+                    "private, max-age=86400"
+                )
+
+                self.end_headers()
+
+                self.wfile.write(
+                    body
+                )
+
+                return
+
+
+            except FileNotFoundError:
+
+                self.send_error(
+                    404
+                )
+
+                return
+
+
+            except (
+                ValueError,
+                KeyError,
+                TypeError,
+                _zipfile.BadZipFile,
+            ) as e:
+
+                print(
+                    "DURATION_PARSE_ERROR",
+                    name,
+                    repr(e),
+                    flush=True
+                )
+
+                self.send_error(
+                    422
+                )
+
+                return
+
+
+            except Exception as e:
+
+                print(
+                    "DURATION_HTTP_ERROR",
+                    name,
+                    repr(e),
+                    flush=True
+                )
+
+                self.send_error(
+                    500
+                )
+
+                return
+
+
+        # MR_8096_IQ_DOWNLOAD_V1
+        if path == "/smp-original":
+
+            name=(
+                q.get(
+                    "file",
+                    [""]
+                )[0]
+            )
+
+
+            try:
+
+                name=safe_name(
+                    name
+                )
+
+
+                p=RADAR/name
+
+
+                if not p.is_file():
+
+                    raise FileNotFoundError(
+                        name
+                    )
+
+
+                size=p.stat().st_size
+
+
+                self.send_response(
+                    200
+                )
+
+
+                self.send_header(
+                    "Content-Type",
+                    "application/octet-stream"
+                )
+
+
+                self.send_header(
+                    "Content-Length",
+                    str(
+                        size
+                    )
+                )
+
+
+                self.send_header(
+                    "Content-Disposition",
+                    'attachment; filename="'
+                    +
+                    name
+                    +
+                    '"'
+                )
+
+
+                self.send_header(
+                    "Cache-Control",
+                    "private, max-age=60"
+                )
+
+
+                self.end_headers()
+
+
+                #
+                # Streaming:
+                # bez wczytywania całego SMP do RAM.
+                #
+                with p.open(
+                    "rb"
+                ) as f:
+
+                    while True:
+
+                        chunk=f.read(
+                            256 * 1024
+                        )
+
+
+                        if not chunk:
+                            break
+
+
+                        self.wfile.write(
+                            chunk
+                        )
+
+
+                return
+
+
+            except ValueError:
+
+                self.send_error(
+                    400
+                )
+
+                return
+
+
+            except FileNotFoundError:
+
+                self.send_error(
+                    404
+                )
+
+                return
+
+
+            except (
+                BrokenPipeError,
+                ConnectionResetError,
+            ):
+
+                #
+                # Użytkownik anulował download.
+                #
+                return
+
+
+            except Exception as e:
+
+                print(
+                    "SMP_DOWNLOAD_HTTP_ERROR",
+                    repr(e),
+                    flush=True
+                )
+
+
+                self.send_error(
+                    500
+                )
+
+                return
+
+
+        # MR_8096_AUDIO_DOWNLOAD_V1
+        if path == "/audio-original":
+
+            name=(
+                q.get(
+                    "file",
+                    [""]
+                )[0]
+            )
+
+
+            try:
+
+                name=safe_name(
+                    name
+                )
+
+
+                p=cached_original_audio(
+                    name
+                )
+
+
+                raw=p.read_bytes()
+
+
+                self.send_response(
+                    200
+                )
+
+
+                self.send_header(
+                    "Content-Type",
+                    "audio/wav"
+                )
+
+
+                self.send_header(
+                    "Content-Length",
+                    str(len(raw))
+                )
+
+
+                self.send_header(
+                    "Cache-Control",
+                    "private, max-age=86400"
+                )
+
+
+                self.send_header(
+                    "Content-Disposition",
+                    'attachment; filename="'
+                    +
+                    p.name
+                    +
+                    '"'
+                )
+
+
+                self.end_headers()
+
+
+                self.wfile.write(
+                    raw
+                )
+
+
+                return
+
+
+            except ValueError:
+
+                self.send_error(
+                    400
+                )
+
+                return
+
+
+            except FileNotFoundError:
+
+                self.send_error(
+                    404
+                )
+
+                return
+
+
+            except Exception as e:
+
+                print(
+                    "AUDIO_ORIGINAL_HTTP_ERROR",
+                    repr(e),
+                    flush=True,
+                )
+
+
+                self.send_error(
+                    500
+                )
+
+                return
+
+
+        # MR_8096_AUDIO_V3
+        if path == "/audio":
+
+            name=(
+                q.get(
+                    "file",
+                    [""]
+                )[0]
+            )
+
+
+            try:
+
+                name=safe_name(
+                    name
+                )
+
+
+                p=cached_audio(
+                    name
+                )
+
+
+                raw=p.read_bytes()
+
+
+                self.send_response(
+                    200
+                )
+
+
+                self.send_header(
+                    "Content-Type",
+                    "audio/wav"
+                )
+
+
+                self.send_header(
+                    "Cache-Control",
+                    "private, max-age=86400"
+                )
+
+
+                self.send_header(
+                    "Content-Length",
+                    str(len(raw))
+                )
+
+
+                self.send_header(
+                    "Content-Disposition",
+                    'inline; filename="'
+                    +
+                    p.name
+                    +
+                    '"'
+                )
+
+
+                self.end_headers()
+
+
+                self.wfile.write(
+                    raw
+                )
+
+
+                return
+
+
+            except ValueError:
+
+                self.send_error(
+                    400
+                )
+
+                return
+
+
+            except FileNotFoundError:
+
+                self.send_error(
+                    404
+                )
+
+                return
+
+
+            except Exception as e:
+
+                print(
+                    "AUDIO_HTTP_ERROR",
+                    repr(e),
+                    flush=True,
+                )
+
+
+                self.send_error(
+                    500
+                )
+
+                return
 
 
         if path == "/image":
