@@ -17,6 +17,9 @@
 | `meteorradio-queue-status.service` | scoring queue/status, port 8095 |
 | `meteorradio-likes.service` | favourites/retention UI, port 8096 |
 | `meteorradio-stats.service` | statistics panel, port 8097 |
+| `meteorradio-3d.service` | read-only 3D spectrogram viewer, port 8099 |
+| `meteorradio-trajectory.service` | single-station trajectory-family analyzer, port 8100 |
+| `meteorradio-rmob/rmob_utc_export.py` | RMOB-oriented UTC export tooling |
 | `meteorradio-prerender.service` | background image rendering/cache |
 | `meteorradio-score-new.timer` | periodic automatic scoring |
 | `meteorradio-retention.timer` | periodic retention cleanup |

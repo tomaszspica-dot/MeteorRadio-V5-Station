@@ -16,7 +16,7 @@ The main dashboard combines Raspberry Pi health, detection browsing, spectrum an
 - Reference snapshot: `20260921_165532_GOLDEN`
 - Golden manifest: 104 files
 - Private Golden archive: about 9.1 MB compressed (runtime observations excluded)
-- Golden `SHA256SUMS.txt` SHA-256: `36dfebd31fec749266fa5f5b902635feef7bd75add4bd57c6205806f22c98b9f`
+- Private Golden archive SHA-256: `3c2017d085ad69b9331955bc8021436970b132f2e07bf2179bda75d096c56ee0`
 - Target radio frequency: **143.050 MHz** (GRAVES)
 - Platform used for the reference station: Raspberry Pi 4, Debian/Trixie-class aarch64 system, RTL-SDR
 
@@ -38,6 +38,8 @@ The main dashboard combines Raspberry Pi health, detection browsing, spectrum an
   - `8095` — scoring queue/status
   - `8096` — favourites/retention + full-size image modal
   - `8097` — statistics
+  - `8099` — read-only 3D Spectrogram Viewer
+  - `8100` — single-station 3D Trajectory Analyzer
 - optional RTL-SDR ownership arbitration for stations sharing one dongle with another receiver
 
 ## Architecture
@@ -56,6 +58,9 @@ flowchart LR
     G --> K[8095 queue]
     I --> L[8096 favourites]
     G --> M[8097 statistics]
+    E --> O[8099 3D spectrogram]
+    O --> P[8100 trajectory families]
+    E --> Q[RMOB exporter]
     D --> N[healthcheck]
 ```
 
@@ -175,6 +180,6 @@ Do not commit:
 
 ## Release status
 
-Reference release: **V5 / Golden 2026-09-19**.
+Reference release: **V5 / Golden 2026-09-21**.
 
 See [`RELEASE_V5_DRAFT.md`](RELEASE_V5_DRAFT.md) for a ready-to-use GitHub Release description.

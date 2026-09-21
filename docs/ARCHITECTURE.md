@@ -27,6 +27,9 @@ flowchart TD
     D --> J[8095 queue/status]
     H --> K[8096 favourites]
     G --> L[8097 statistics]
+    B --> N[8099 3D spectrogram analysis]
+    N --> O[8100 trajectory-family analysis]
+    B --> P[RMOB UTC exporter]
     A --> M[healthcheck]
 ```
 

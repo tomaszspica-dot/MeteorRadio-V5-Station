@@ -9,7 +9,7 @@ This release documents the verified V5 reference station for GRAVES meteor-scatt
 - 1–7 day score-based retention for unliked detections
 - indefinite retention for favourites
 - manual deletion workflow
-- web UI on 8094, scoring status on 8095, favourites on 8096 and statistics on 8097
+- web UI on 8094, scoring status on 8095, favourites on 8096, statistics on 8097, 3D spectrogram analysis on 8099 and trajectory-family analysis on 8100
 - pre-render image cache
 - station health monitoring
 - optional RTL-SDR owner arbitration for a shared receiver
@@ -17,9 +17,9 @@ This release documents the verified V5 reference station for GRAVES meteor-scatt
 ## Reference verification
 
 - Golden: `20260921_165532_GOLDEN`
-- source snapshot files: 69
-- Golden `SHA256SUMS.txt` SHA-256:
-  `36dfebd31fec749266fa5f5b902635feef7bd75add4bd57c6205806f22c98b9f`
+- Golden manifest: 104 files
+- Private Golden archive SHA-256:
+  `3c2017d085ad69b9331955bc8021436970b132f2e07bf2179bda75d096c56ee0`
 
 Raw SMP observations and generated PNG cache are not part of the reference release.
 

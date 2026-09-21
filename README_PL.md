@@ -14,7 +14,7 @@ MeteorRadio V5 to stacja do **radiowej detekcji meteorów i meteor scatter** opa
 - Golden: `20260921_165532_GOLDEN`
 - 104 pliki w manifeście Golden
 - ok. 9.1 MB skompresowanego prywatnego archiwum Golden bez danych obserwacyjnych
-- SHA-256 manifestu Goldena: `36dfebd31fec749266fa5f5b902635feef7bd75add4bd57c6205806f22c98b9f`
+- SHA-256 prywatnego archiwum Golden: `3c2017d085ad69b9331955bc8021436970b132f2e07bf2179bda75d096c56ee0`
 - odbiór: **GRAVES 143.050 MHz**
 
 ## Panele
@@ -25,6 +25,8 @@ MeteorRadio V5 to stacja do **radiowej detekcji meteorów i meteor scatter** opa
 | 8095 | kolejka/status automatycznej oceny |
 | 8096 | ulubione, retencja, ręczne usuwanie, duży podgląd obrazu |
 | 8097 | statystyki |
+| 8099 | 3D Spectrogram Viewer — analiza zapisanych obserwacji |
+| 8100 | 3D Trajectory Analyzer — rodziny rozwiązań bistatycznych |
 
 ## Najważniejsze rozszerzenia V5
 
