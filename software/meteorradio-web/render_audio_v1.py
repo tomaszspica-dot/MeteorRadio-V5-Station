@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+# CODE PROVENANCE
+# Base IQ-to-USB-audio method reference:
+#   rabssm/MeteorRadio src/smp2wav.py
+#   https://github.com/rabssm/MeteorRadio/blob/main/src/smp2wav.py
+# This V5 implementation is rewritten and extends the method with station-local
+# band-pass filtering, DC removal, normalization and click-reducing fades.
+# See docs/CODE_PROVENANCE.md.
+
+
 # MR_AUDIO_RENDER_V4_BANDPASS
 #
 # MeteorRadio SMP -> USB WAV

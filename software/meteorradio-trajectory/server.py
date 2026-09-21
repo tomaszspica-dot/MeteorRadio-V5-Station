@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 
+# CODE PROVENANCE
+# Contextual/scientific references reviewed during development:
+#   https://github.com/bolidozor/trails-processing
+#   https://github.com/bolidozor/MeteorDataAnalyser
+#   https://github.com/bolidozor/RMDS02
+#   https://github.com/carmelo-meteor/carmelo_meteor
+# These are research/context references; the V5 8100 solver is independently
+# implemented around single-station bistatic GRAVES geometry and Doppler data.
+# See docs/CODE_PROVENANCE.md.
+
+
 import json
 import math
 import os

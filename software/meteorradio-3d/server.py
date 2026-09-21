@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+# CODE PROVENANCE
+# Visualization concept reference:
+#   MLAB-project/pysdr, Freya 3D waterfall tool
+#   https://github.com/MLAB-project/pysdr/blob/master/tools/3dwf.py
+# This V5 service is independently implemented as an HTTP/browser viewer over
+# saved MeteorRadio NPZ observations; no Freya source-code copy was identified.
+# See docs/CODE_PROVENANCE.md.
+
+
 import json
 import urllib.parse
 from datetime import datetime

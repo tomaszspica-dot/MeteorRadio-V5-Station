@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+# CODE PROVENANCE
+# Method reference:
+#   rabssm/MeteorRadio src/smp2wav.py
+#   https://github.com/rabssm/MeteorRadio/blob/main/src/smp2wav.py
+# The core method (real component of complex IQ -> signed 16-bit PCM for USB)
+# is adapted/reimplemented here with V5 validation and atomic output handling.
+# See docs/CODE_PROVENANCE.md.
+
+
 # MR_AUDIO_ORIGINAL_V1
 #
 # Niefiltrowany USB WAV z zapisanego SMP complex IQ.

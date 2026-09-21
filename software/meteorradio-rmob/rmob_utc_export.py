@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+# CODE PROVENANCE
+# RMOB workflow/format references:
+#   https://github.com/rabssm/MeteorRadio/blob/main/src/monthly_rmob.py
+#   https://github.com/bolidozor/rmob-export
+# The V5 UTC exporter is independently implemented for V5 CSV logs.
+# See docs/CODE_PROVENANCE.md.
+
+
 import csv
 import glob
 import calendar

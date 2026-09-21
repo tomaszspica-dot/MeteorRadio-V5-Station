@@ -159,6 +159,12 @@ Key documents:
 - [`docs/PUBLICATION_CHECKLIST.md`](docs/PUBLICATION_CHECKLIST.md)
 - [`docs/COMMUNITY.md`](docs/COMMUNITY.md)
 
+## Code provenance and external project credits
+
+A detailed file-by-file provenance map is maintained in [`docs/CODE_PROVENANCE.md`](docs/CODE_PROVENANCE.md).
+
+It explicitly credits **MeteorRadio/rabssm**, the **Bolidozor/MLAB** projects reviewed during development, **PySDR/Freya**, **CARMELo**, and **jrb985/radio-meteor-project**, while distinguishing upstream-derived methods from format/workflow references and concept-only inspiration.
+
 ## Upstream
 
 The acquisition/detection core is based on:

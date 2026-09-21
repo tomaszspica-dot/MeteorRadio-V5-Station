@@ -74,3 +74,9 @@ Panel tylko do odczytu przeznaczony do analizy zapisanych obserwacji NPZ.
 Analizator bistatyczny pojedynczej stacji. Wynik przedstawia rodzinę geometrii zgodnych ze zmierzonym Dopplerem, a nie jednoznaczną rzeczywistą trajektorię.
 
 Współrzędne odbiornika nie są zapisane w publicznym kodzie. Użytkownik podaje je lokalnie przez zmienne środowiskowe.
+
+## Pochodzenie kodu i źródła inspiracji
+
+Dokładna mapa pochodzenia znajduje się w [`docs/CODE_PROVENANCE.md`](docs/CODE_PROVENANCE.md).
+
+Wymienione są tam jawnie: **MeteorRadio/rabssm**, projekty **Bolidozor/MLAB**, **PySDR/Freya**, **CARMELo** oraz **jrb985/radio-meteor-project**. Dokument rozróżnia kod/metody pochodzące od upstreamu, zgodność z formatami i workflow oraz projekty użyte wyłącznie jako inspiracja lub punkt odniesienia.

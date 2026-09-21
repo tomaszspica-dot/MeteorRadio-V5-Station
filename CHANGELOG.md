@@ -15,6 +15,7 @@
 - strengthened publication validation
 - kept the modified upstream acquisition core outside the public repository
 - confirmed private mobile-client components are absent from the public repository
+- added explicit code-provenance and project-credit mapping for MeteorRadio, Bolidozor/MLAB, Freya/PySDR, CARMELo and Radio Meteor Project
 
 ## V5 — 2026-09-19
 
