@@ -25,4 +25,4 @@ Raw SMP observations and generated PNG cache are not part of the reference relea
 
 ## Licensing note
 
-The public repository does not include copied upstream MeteorRadio core source until its redistribution/license status is clarified. See `UPSTREAM_LICENSE_NOTICE.md`.
+Upstream MeteorRadio licensing is now confirmed as **GNU GPLv3**. The current public V5 tree still keeps the locally modified upstream core outside the repository by default until that component is prepared with complete GPLv3 attribution, modification notices and source provenance. See `UPSTREAM_LICENSE_NOTICE.md`.
