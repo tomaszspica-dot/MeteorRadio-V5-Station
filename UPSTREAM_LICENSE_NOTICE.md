@@ -10,7 +10,7 @@ The upstream author clarified the licensing and redistribution terms in:
 
 <https://github.com/rabssm/MeteorRadio/issues/14>
 
-The upstream repository now contains a standard **GNU General Public License v3.0 (GPLv3)** `LICENSE` file.
+The upstream repository now contains a standard **GNU General Public License v3.0 (GPLv3)** `LICENSE` file. A verbatim copy of that upstream license is retained in this repository at [`third_party/MeteorRadio/LICENSE`](third_party/MeteorRadio/LICENSE) for MeteorRadio-derived material.
 
 ## What this means for MeteorRadio-derived code
 
