@@ -27,6 +27,8 @@ git push -u origin main
 
 HTTPS can be used instead of SSH if preferred.
 
-## Before Public
+## Before publishing upstream-derived core
 
-The main blocker to a full-source public release is the unclear upstream license. Keep `private_reference/` private and follow `UPSTREAM_LICENSE_NOTICE.md`.
+The previous upstream licensing blocker is resolved: MeteorRadio is now explicitly **GPLv3**. The current V5 packaging still keeps the locally modified core in `private_reference/` by default until its exact upstream base, retained notices and modification information are prepared.
+
+Follow `UPSTREAM_LICENSE_NOTICE.md` and `docs/UPSTREAM_GPLV3_PUBLICATION_CHECKLIST.md` before intentionally adding upstream-derived source to the public tree.
