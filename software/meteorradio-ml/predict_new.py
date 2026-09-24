@@ -10,6 +10,7 @@ from ml_common import (
     PREDICTIONS_FILE,
     RADAR,
     atomic_json,
+    radar_file_map,
     extract_features,
     fetch_classification,
     load_model,
@@ -36,16 +37,17 @@ def main() -> None:
     items = state.get("items", {}) if isinstance(state.get("items"), dict) else {}
     max_per_run = max(0, int(os.environ.get("MR_ML_MAX_PER_RUN", "0")))
 
+    radar_files = radar_file_map()
     candidates = []
     for name, score in scores.items():
-        if not (RADAR / name).is_file():
+        if name not in radar_files:
             continue
         old = items.get(name)
         if isinstance(old, dict) and old.get("model_id") == model_id:
             continue
         candidates.append((name, score))
 
-    candidates.sort(key=lambda pair: (RADAR / pair[0]).stat().st_mtime)
+    candidates.sort(key=lambda pair: radar_files[pair[0]].stat().st_mtime)
     if max_per_run:
         candidates = candidates[:max_per_run]
 
