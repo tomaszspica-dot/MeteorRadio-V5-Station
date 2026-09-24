@@ -49,3 +49,23 @@ stateDiagram-v2
 ```
 
 On a dedicated MeteorRadio-only station this arbitration layer may be unnecessary.
+
+
+## Optional ML post-capture path
+
+```mermaid
+flowchart LR
+    A[SMP detection] --> B[v5.6.2 heuristic + features]
+    B --> C[8101 manual review labels]
+    C --> D[manual model training]
+    D --> E[exported logistic model]
+    B --> F[background prediction worker]
+    E --> F
+    F --> G[advisory class probabilities]
+    G --> H[UNKNOWN below confidence threshold]
+```
+
+ML v1 is deliberately downstream of capture. It has no RTL-SDR ownership,
+does not change the trigger, does not automatically delete observations and does
+not influence the existing score-based retention policy. See
+[`ML_CLASSIFIER.md`](ML_CLASSIFIER.md).

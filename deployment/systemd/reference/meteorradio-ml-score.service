@@ -1,0 +1,17 @@
+[Unit]
+Description=MeteorRadio ML prediction worker
+After=meteorradio-web.service
+Requires=meteorradio-web.service
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/meteorradio-ml
+EnvironmentFile=-/etc/default/meteorradio-ml
+ExecStart=/usr/bin/nice -n 19 /usr/bin/python3 -u /home/pi/meteorradio-ml/predict_new.py
+Nice=19
+IOSchedulingClass=idle
+CPUWeight=10
+NoNewPrivileges=true
+TimeoutStartSec=300

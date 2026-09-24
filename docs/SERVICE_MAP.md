@@ -36,3 +36,21 @@ Do not change that design without understanding the local radio-sharing topology
 | 8100 | 3D Trajectory Analyzer | Single-station bistatic trajectory-family analysis |
 
 The 8099/8100 analysis chain operates on saved observations and does not acquire the RTL-SDR directly.
+
+
+---
+
+## Optional ML classification layer
+
+| Unit | Type | Reference state | Function |
+|---|---|---|---|
+| `meteorradio-ml.service` | service | optional | manual review / labelling UI on 8101 |
+| `meteorradio-ml-score.service` | oneshot/static worker | timer-triggered | feature-based ML predictions for retained detections |
+| `meteorradio-ml-score.timer` | timer | optional | launches the ML prediction worker every 5 minutes |
+
+| Port | Service | Purpose |
+|---:|---|---|
+| 8101 | MeteorRadio ML Review | manual labels, dataset export and advisory ML probabilities |
+
+The ML layer does not own the RTL-SDR, does not modify the acquisition trigger,
+does not delete detections and does not change the existing 1–7 retention policy.
