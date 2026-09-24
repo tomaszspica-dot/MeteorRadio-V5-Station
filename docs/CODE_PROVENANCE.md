@@ -10,7 +10,7 @@ Audit date: **2026-09-21**.
 
 | External project | Relationship to MeteorRadio V5 | Local/public area | Code relationship |
 |---|---|---|---|
-| [rabssm/MeteorRadio](https://github.com/rabssm/MeteorRadio) | Primary upstream acquisition and radio-meteor detection foundation | local acquisition core; V5 station layer around it | The locally modified upstream acquisition core is intentionally **not vendored** in this public repository while redistribution/licensing remains unclear. |
+| [rabssm/MeteorRadio](https://github.com/rabssm/MeteorRadio) | Primary upstream acquisition and radio-meteor detection foundation | local acquisition core; V5 station layer around it | Upstream is **GPLv3**. The locally modified core is not vendored by default while its exact base, notices and V5 changes are prepared for GPLv3-compliant publication. |
 | [MeteorRadio `src/smp2wav.py`](https://github.com/rabssm/MeteorRadio/blob/main/src/smp2wav.py) | Reference for converting saved complex IQ SMP data to USB audio by taking the real component and writing 16-bit PCM | `software/meteorradio-web/render_audio_original_v1.py`, `render_audio_v1.py` | Method adapted/reimplemented. Current public renderers were rewritten for the V5 station; the filtered renderer adds local band-pass, DC removal, normalization and fade handling. |
 | [MeteorRadio `src/monthly_rmob.py`](https://github.com/rabssm/MeteorRadio/blob/main/src/monthly_rmob.py) | Reference for MeteorRadio/RMOB monthly-output workflow | `software/meteorradio-rmob/rmob_utc_export.py` | Format/workflow reference; V5 exporter is independently implemented. |
 | [bolidozor/rmob-export](https://github.com/bolidozor/rmob-export) | Reference for RMOB-compatible export/colorgramme workflows and network interoperability | `software/meteorradio-rmob/rmob_utc_export.py` and RMOB docs | Format/workflow reference; no direct source-code copy identified in the current V5 exporter. |
@@ -27,7 +27,7 @@ Audit date: **2026-09-21**.
 ## Current V5 modules and attribution
 
 ### Acquisition core
-The actual acquisition/detection foundation is **MeteorRadio by `rabssm`**. Local changes to that upstream-derived core are kept outside this public repository until redistribution terms are clear.
+The actual acquisition/detection foundation is **MeteorRadio by `rabssm`**. Local changes to that upstream-derived core are currently kept outside this public repository by packaging policy. GPLv3 redistribution is now permitted once the upstream notices, modification information and corresponding source are prepared.
 
 ### Audio renderers
 The basic SMP IQ-to-USB-audio method follows the documented MeteorRadio `smp2wav.py` approach: load complex IQ samples, use the real component for USB audio, and convert to signed 16-bit PCM. The V5 files are separately structured implementations and add validation, atomic output, optional filtering, normalization and fades.
@@ -43,7 +43,7 @@ The 8100 solver was developed as a V5 station module around single-station bista
 
 ## License/status notes
 
-- **rabssm/MeteorRadio:** no root license file was found during the 2026-09-21 publication audit; therefore the modified upstream acquisition core remains outside the public V5 tree.
+- **rabssm/MeteorRadio:** upstream licensing was clarified on 2026-09-24 as **GNU GPLv3** in issue #14, and the upstream repository now contains a standard GPLv3 `LICENSE` file. The modified acquisition core remains outside the public V5 tree by current packaging policy until its GPLv3 publication metadata is prepared.
 - **MLAB-project/pysdr:** its README states GNU GPL v3.
 - **bolidozor/RTbolidozor** and **bolidozor/MeteorDataAnalyser:** upstream repositories contain GPL license material.
 - **bolidozor/rmob-export:** upstream repository contains GPL license material; consult that repository for the exact applicable terms.
