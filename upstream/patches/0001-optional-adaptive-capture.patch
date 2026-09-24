@@ -1,5 +1,5 @@
 diff --git a/src/meteor_radar.py b/src/meteor_radar.py
-index b4dffd162db3..7c00f4edf57b 100644
+index b4dffd162db3..98a731a825e5 100644
 --- a/src/meteor_radar.py
 +++ b/src/meteor_radar.py
 @@ -1,5 +1,6 @@
@@ -253,27 +253,35 @@ index b4dffd162db3..7c00f4edf57b 100644
  
          # Decimate to reduce sample rate from 300 kHz to 37.5 kHz
          decimated_samples = scipy_signal.decimate(raw_samples, DECIMATION)
-@@ -594,7 +739,18 @@
+@@ -594,7 +739,26 @@
          sample_filename = self.captures_dir + '/SMP_' + str(int(centre_freq)) + obs_time.strftime('_%Y%m%d_%H%M%S_%f.npz')
          syslog.syslog(syslog.LOG_DEBUG, "Saving " + sample_filename)
          print("Saving", sample_filename)
-+        np.savez(
-+            sample_filename,
-+            obs_time=str(obs_time),
-+            centre_freq=centre_freq,
-+            sample_rate=self.decimated_sample_rate,
-+            samples=np.array(decimated_samples).astype("complex64"),
-+            trigger_time=str(trigger_time),
-+            adaptive_capture=bool(trigger_time),
-+            adaptive_pre_seconds=(ADAPTIVE_PRE_SECONDS if trigger_time else 0.0),
-+            adaptive_stop_reason=str(adaptive_stop_reason),
-+            adaptive_post_seconds=float(adaptive_post_seconds),
-+        )
++        sample_payload = {
++            "obs_time": str(obs_time),
++            "centre_freq": centre_freq,
++            "sample_rate": self.decimated_sample_rate,
++            "samples": np.array(decimated_samples).astype("complex64"),
++        }
++
++        # Keep the original SMP schema unchanged for non-adaptive captures.
++        if trigger_time :
++            sample_payload.update(
++                {
++                    "trigger_time": str(trigger_time),
++                    "adaptive_capture": True,
++                    "adaptive_pre_seconds": ADAPTIVE_PRE_SECONDS,
++                    "adaptive_stop_reason": str(adaptive_stop_reason),
++                    "adaptive_post_seconds": float(adaptive_post_seconds),
++                }
++            )
++
++        np.savez(sample_filename, **sample_payload)
 -        np.savez(sample_filename, obs_time=str(obs_time), centre_freq=centre_freq, sample_rate=self.decimated_sample_rate, samples=np.array(decimated_samples).astype("complex64"))
          print("\a")
  
          # Log the data
-@@ -857,6 +1013,7 @@
+@@ -857,6 +1021,7 @@
      ap.add_argument("-v", "--verbose", action='store_true', help="Verbose output")
      ap.add_argument("--detectionband", nargs=2, type=int, default=DETECTION_FREQUENCY_BAND, help="Frequency band for detection in Hz. Default is " + str(DETECTION_FREQUENCY_BAND) + " e.g. -120 120")
      ap.add_argument("--noiseband", nargs=2, type=int, default=NOISE_CALCULATION_BAND, help="Frequency band for noise calculation in Hz. Default is " + str(NOISE_CALCULATION_BAND) + " e.g. -500 500")
@@ -281,7 +289,7 @@ index b4dffd162db3..7c00f4edf57b 100644
      args = vars(ap.parse_args())
  
      centre_freq = args['frequency']
-@@ -871,6 +1028,7 @@
+@@ -871,6 +1036,7 @@
      verbose = args['verbose']
      detection_frequency_band = args['detectionband']
      noise_calculation_band = args['noiseband']
@@ -289,15 +297,16 @@ index b4dffd162db3..7c00f4edf57b 100644
      sdr_serial_number = args['sdrserialnum']
  
      if save_fft_samples:
-@@ -881,6 +1039,7 @@
+@@ -881,6 +1047,8 @@
  
      print("Detection frequency:", centre_freq)
      print("SNR threshold:", snr_threshold)
-+    print("Adaptive capture:", adaptive_capture_enabled)
++    if adaptive_capture_enabled:
++        print("Adaptive capture enabled")
      if save_raw_samples:
          print("Saving raw sample data")
      else:
-@@ -890,7 +1049,13 @@
+@@ -890,7 +1058,13 @@
      make_directories()
  
      # Deque for samples data for saving on trigger
