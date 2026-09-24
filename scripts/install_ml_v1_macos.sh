@@ -61,13 +61,20 @@ if [[ -z "$SCORE_INDEX" ]]; then
 fi
 
 RADAR_DIR=""
-FIRST_SMP="$(find "$ROOT" -type f -name 'SMP_*.npz' -print -quit 2>/dev/null || true)"
-if [[ -n "$FIRST_SMP" ]]; then
-  RADAR_DIR="$(dirname "$FIRST_SMP")"
+# Current macOS layout keeps detections in nested per-event directories below inbox.
+if [[ -d "$ROOT/inbox" ]]; then
+  RADAR_DIR="$ROOT/inbox"
 fi
 
 if [[ -z "$RADAR_DIR" ]]; then
   RADAR_DIR="$(find "$ROOT" -type d -name 'radar_data' -print -quit 2>/dev/null || true)"
+fi
+
+if [[ -z "$RADAR_DIR" ]]; then
+  FIRST_SMP="$(find "$ROOT" -type f -name 'SMP_*.npz' -print -quit 2>/dev/null || true)"
+  if [[ -n "$FIRST_SMP" ]]; then
+    RADAR_DIR="$ROOT"
+  fi
 fi
 
 if [[ -z "$RADAR_DIR" ]]; then
