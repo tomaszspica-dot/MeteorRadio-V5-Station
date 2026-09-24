@@ -34,9 +34,15 @@ MeteorRadio V5 to stacja do **radiowej detekcji meteorów i meteor scatter** opa
 
 Detekcje dostają ocenę 1–7. Niepolubiona detekcja może być usuwana po liczbie dni odpowiadającej ocenie, a polubione są przechowywane bezterminowo do ręcznego usunięcia.
 
-## Ważne przed publikacją
+## Licencja i publikacja rdzenia
 
-Nie publikujemy automatycznie zmodyfikowanego upstreamowego `MeteorRadio`, ponieważ upstream nie ma obecnie widocznego pliku licencji. Zmodyfikowany rdzeń może zostać zachowany lokalnie w `private_reference/`, ale ten katalog jest ignorowany przez Git. Szczegóły: `UPSTREAM_LICENSE_NOTICE.md`.
+Status licencji upstreamu został wyjaśniony **24.09.2026**. Autor `rabssm/MeteorRadio` potwierdził **GNU GPLv3** w issue #14, a repozytorium upstream zawiera już standardowy plik `LICENSE` GPLv3.
+
+Zmodyfikowany kod MeteorRadio może być publicznie rozpowszechniany na warunkach GPLv3, z zachowaniem informacji o prawach autorskich i licencji, oznaczeniem modyfikacji oraz udostępnieniem odpowiadającego kodu źródłowego zgodnie z GPLv3.
+
+W tym repo zmodyfikowany rdzeń nadal domyślnie pozostaje w ignorowanym przez Git `private_reference/` do czasu przygotowania go do uporządkowanej publikacji zgodnej z GPLv3. Nie jest to już blokada licencyjna, tylko świadoma zasada pakowania i audytu.
+
+Dla niezależnego kodu warstwy V5 nie wybrano jeszcze licencji obejmującej całe repozytorium. Szczegóły: `docs/LICENSE_DECISION.md` i `UPSTREAM_LICENSE_NOTICE.md`.
 
 ## Jak przygotować repo z finalnej instalki
 
