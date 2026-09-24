@@ -1,27 +1,44 @@
-# Upstream license / redistribution notice
+# Upstream MeteorRadio licensing / redistribution status
 
-## Why the upstream core is not in the public tree
+## Status: resolved on 2026-09-24
 
 The reference station is based on `rabssm/MeteorRadio`:
 
 <https://github.com/rabssm/MeteorRadio>
 
-During preparation of this GitHub package on 2026-09-19:
+The upstream author clarified the licensing and redistribution terms in:
 
-- no root `LICENSE` file was visible in the upstream repository listing;
-- the inspected beginning of `src/meteor_radar.py` did not contain an explicit license header.
+<https://github.com/rabssm/MeteorRadio/issues/14>
 
-Without an explicit software license, public redistribution and relicensing of copied/modified upstream source should **not** be assumed to be permitted.
+The upstream repository now contains a standard **GNU General Public License v3.0 (GPLv3)** `LICENSE` file.
 
-Therefore this repository template uses a conservative structure:
+## What this means for MeteorRadio-derived code
 
-- public docs and station-layer code can live in the repository;
-- the modified upstream core is imported only into `private_reference/`;
-- `private_reference/` is excluded by `.gitignore`;
-- a public full-source release should wait until the upstream author clarifies or grants redistribution rights.
+The upstream author explicitly confirmed that:
 
-This file is a practical publication precaution, not legal advice.
+- MeteorRadio is intended to be licensed under **GPLv3**;
+- modified MeteorRadio source may be redistributed under GPLv3;
+- commercial use and redistribution are permitted under GPLv3;
+- existing copyright and GPL notices must be retained;
+- modified upstream source files must carry appropriate modification information;
+- corresponding source must be made available when required by GPLv3;
+- submitting changes upstream as pull requests is welcome, but is not mandatory.
 
-A ready-to-send permission request is available at:
+Any MeteorRadio-derived source distributed by this project must therefore remain under GPLv3 and preserve the upstream notices and authorship.
 
-`docs/UPSTREAM_PERMISSION_REQUEST_TEMPLATE.md`
+## Current V5 repository policy
+
+The modified upstream acquisition core is still kept under Git-ignored `private_reference/` by default.
+
+This is now a **packaging and audit choice, not a licensing blocker**. Before publishing the modified core in this repository, the project should:
+
+1. identify the exact upstream base commit;
+2. preserve the upstream copyright and GPLv3 notices;
+3. mark the V5 modifications clearly;
+4. include the applicable GPLv3 license text with the distributed upstream-derived component;
+5. verify that the complete corresponding source is available;
+6. prepare a clean diff suitable for possible upstream review / pull request.
+
+The independent V5 station-layer software may have a separate license where it is genuinely independent of the GPL-covered MeteorRadio code. No repository-wide license for that independent station-layer code has been selected yet; see `docs/LICENSE_DECISION.md`.
+
+This file records the project's publication policy and upstream clarification. It is not legal advice.
