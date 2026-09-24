@@ -11,7 +11,7 @@ For the file-by-file map, see [`docs/CODE_PROVENANCE.md`](docs/CODE_PROVENANCE.m
 - Project: **MeteorRadio**
 - Repository: https://github.com/rabssm/MeteorRadio
 
-MeteorRadio is the acquisition and radio-meteor detection foundation used by this station. The locally modified upstream acquisition core is deliberately not vendored in this public repository while redistribution/licensing rights remain unclear.
+MeteorRadio is the acquisition and radio-meteor detection foundation used by this station. Upstream licensing was clarified on 2026-09-24 as **GNU GPLv3**. The locally modified acquisition core is still not vendored here by default while its V5 changes are being prepared for a clean GPLv3-compliant publication and possible upstream review.
 
 Two public V5 audio renderers also credit MeteorRadio's `src/smp2wav.py` as the method reference for converting complex SMP IQ to USB 16-bit PCM. The V5 implementations are rewritten and extended rather than published as copies of that upstream file.
 
