@@ -1,0 +1,19 @@
+[Unit]
+Description=MeteorRadio ML review and labelling UI 8101
+After=network.target meteorradio-web.service meteorradio-likes.service
+Wants=network.target meteorradio-web.service meteorradio-likes.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/meteorradio-ml
+EnvironmentFile=-/etc/default/meteorradio-ml
+ExecStart=/usr/bin/python3 -u /home/pi/meteorradio-ml/server.py
+Restart=on-failure
+RestartSec=5
+Nice=15
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
