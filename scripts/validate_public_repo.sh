@@ -150,11 +150,14 @@ done < <(find . -path './.git' -prune -o -path './private_reference' -prune -o \
   -type f \( -name '*.sh' -o -name '*.command' \) -print0)
 pass "shell syntax checked: $SHCOUNT files"
 
-# Upstream core must not be present in public tree.
+# Current V5 packaging policy keeps the GPLv3 upstream-derived core out of
+# the public tree until its notices, exact base and modification metadata are
+# deliberately prepared. GPLv3 now permits redistribution; this check prevents
+# accidental vendoring, not licensed redistribution after an intentional layout change.
 if [ -f software/meteor_radar.py ] || [ -f upstream/meteor_radar.py ] || [ -d software/MeteorRadio ]; then
-  fail "upstream-derived acquisition core appears in public tree"
+  fail "upstream-derived core appears in public tree without an intentional validator/layout update"
 else
-  pass "upstream core not vendored in public tree"
+  pass "upstream core not accidentally vendored in public tree"
 fi
 
 # Finder metadata.
