@@ -39,9 +39,11 @@ Treat those units as templates until all local paths have been checked.
 
 ## 5. Core V5 adaptive-capture modification
 
-The reference station uses a modified upstream `meteor_radar.py` implementing `ADAPTIVE_CAPTURE_V2`. Because upstream redistribution rights are currently unclear, the modified core is stored locally under `private_reference/` and excluded from Git.
+The reference station uses a modified upstream `meteor_radar.py` implementing `ADAPTIVE_CAPTURE_V2`. Upstream MeteorRadio is now confirmed as **GPLv3**, so redistribution of a compliant modified version is permitted.
 
-A public reproducible patch should be added only after licensing/permission is clarified.
+The current V5 package still stores the modified core locally under `private_reference/` and excludes it from Git by default. This preserves a clean boundary while the exact upstream base, retained notices and V5 modification information are prepared.
+
+A public source copy or reproducible patch may now be prepared under GPLv3. Follow `UPSTREAM_LICENSE_NOTICE.md` and `docs/UPSTREAM_GPLV3_PUBLICATION_CHECKLIST.md`.
 
 ## 6. Verification
 
