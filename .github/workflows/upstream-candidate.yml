@@ -29,7 +29,7 @@ jobs:
         run: |
           cd /tmp/MeteorRadio
           ACTUAL="$(git hash-object src/meteor_radar.py)"
-          EXPECTED="7c00f4edf57b102d89f06805753b30e6fe987f39"
+          EXPECTED="98a731a825e53a6d24fd2e0df41e8382c28cea01"
           echo "actual=$ACTUAL"
           echo "expected=$EXPECTED"
           test "$ACTUAL" = "$EXPECTED"
