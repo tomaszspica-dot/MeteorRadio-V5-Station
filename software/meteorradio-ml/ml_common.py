@@ -142,6 +142,41 @@ def safe_name(name: Any) -> str:
     return name
 
 
+def radar_file_map() -> Dict[str, Path]:
+    """Return retained SMP files below RADAR, supporting nested macOS inbox folders."""
+    out: Dict[str, Path] = {}
+    if not RADAR.exists():
+        return out
+
+    try:
+        iterator = RADAR.rglob("SMP_*.npz") if RADAR.is_dir() else []
+        for path in iterator:
+            if not path.is_file():
+                continue
+            # Basename is the station-wide detection identifier used by score indexes.
+            # If duplicates ever exist, prefer the newest retained copy.
+            old = out.get(path.name)
+            if old is None:
+                out[path.name] = path
+                continue
+            try:
+                if path.stat().st_mtime > old.stat().st_mtime:
+                    out[path.name] = path
+            except OSError:
+                pass
+    except OSError:
+        return out
+    return out
+
+
+def find_smp_path(name: Any) -> Optional[Path]:
+    name = safe_name(name)
+    direct = RADAR / name
+    if direct.is_file():
+        return direct
+    return radar_file_map().get(name)
+
+
 def read_scores() -> Dict[str, int]:
     raw = load_json(SCORE_INDEX, {})
     if isinstance(raw, dict) and isinstance(raw.get("scores"), dict):
