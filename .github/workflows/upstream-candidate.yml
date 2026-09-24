@@ -1,0 +1,44 @@
+name: upstream-candidate
+
+on:
+  push:
+    branches:
+      - upstream-pr/adaptive-capture-foundation
+  pull_request:
+    paths:
+      - 'upstream/patches/0001-optional-adaptive-capture.patch'
+      - 'software/upstream-review/meteor_radar.py'
+      - '.github/workflows/upstream-candidate.yml'
+
+jobs:
+  verify-upstream-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone current upstream
+        run: git clone --depth 1 https://github.com/rabssm/MeteorRadio.git /tmp/MeteorRadio
+
+      - name: Verify patch applies cleanly
+        run: |
+          cd /tmp/MeteorRadio
+          git apply --check "$GITHUB_WORKSPACE/upstream/patches/0001-optional-adaptive-capture.patch"
+          git apply "$GITHUB_WORKSPACE/upstream/patches/0001-optional-adaptive-capture.patch"
+
+      - name: Verify exact candidate and Python syntax
+        run: |
+          cd /tmp/MeteorRadio
+          ACTUAL="$(git hash-object src/meteor_radar.py)"
+          EXPECTED="7c00f4edf57b102d89f06805753b30e6fe987f39"
+          echo "actual=$ACTUAL"
+          echo "expected=$EXPECTED"
+          test "$ACTUAL" = "$EXPECTED"
+          python3 -m py_compile src/meteor_radar.py
+
+      - name: Verify opt-in markers
+        run: |
+          cd /tmp/MeteorRadio
+          grep -q -- '--adaptivecapture' src/meteor_radar.py
+          grep -q 'Adaptive capture START' src/meteor_radar.py
+          grep -q 'adaptive_stop_reason' src/meteor_radar.py
+          grep -q 'Modified 2026-09-24 by Tomasz Spica' src/meteor_radar.py
