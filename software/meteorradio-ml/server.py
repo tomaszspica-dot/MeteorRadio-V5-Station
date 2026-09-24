@@ -26,6 +26,8 @@ from ml_common import (
     dataset_csv_bytes,
     extract_features,
     fetch_classification,
+    find_smp_path,
+    radar_file_map,
     load_labels,
     load_model,
     load_predictions,
@@ -60,9 +62,10 @@ def snapshot() -> Dict[str, Any]:
     predictions = predictions_payload.get("items", {})
     items = []
 
+    radar_files = radar_file_map()
     for name, score in scores.items():
-        path = RADAR / name
-        if not path.is_file():
+        path = radar_files.get(name)
+        if path is None or not path.is_file():
             continue
         try:
             st = path.stat()
@@ -112,8 +115,8 @@ def set_label(name: str, label: str) -> Dict[str, Any]:
     name = safe_name(name)
     if label not in VALID_LABELS:
         raise ValueError("invalid label")
-    src = RADAR / name
-    if not src.is_file():
+    src = find_smp_path(name)
+    if src is None or not src.is_file():
         raise FileNotFoundError(name)
 
     scores = read_scores()
