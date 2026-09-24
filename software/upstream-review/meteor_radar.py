@@ -739,18 +739,26 @@ class SampleAnalyser(threading.Thread):
         sample_filename = self.captures_dir + '/SMP_' + str(int(centre_freq)) + obs_time.strftime('_%Y%m%d_%H%M%S_%f.npz')
         syslog.syslog(syslog.LOG_DEBUG, "Saving " + sample_filename)
         print("Saving", sample_filename)
-        np.savez(
-            sample_filename,
-            obs_time=str(obs_time),
-            centre_freq=centre_freq,
-            sample_rate=self.decimated_sample_rate,
-            samples=np.array(decimated_samples).astype("complex64"),
-            trigger_time=str(trigger_time),
-            adaptive_capture=bool(trigger_time),
-            adaptive_pre_seconds=(ADAPTIVE_PRE_SECONDS if trigger_time else 0.0),
-            adaptive_stop_reason=str(adaptive_stop_reason),
-            adaptive_post_seconds=float(adaptive_post_seconds),
-        )
+        sample_payload = {
+            "obs_time": str(obs_time),
+            "centre_freq": centre_freq,
+            "sample_rate": self.decimated_sample_rate,
+            "samples": np.array(decimated_samples).astype("complex64"),
+        }
+
+        # Keep the original SMP schema unchanged for non-adaptive captures.
+        if trigger_time :
+            sample_payload.update(
+                {
+                    "trigger_time": str(trigger_time),
+                    "adaptive_capture": True,
+                    "adaptive_pre_seconds": ADAPTIVE_PRE_SECONDS,
+                    "adaptive_stop_reason": str(adaptive_stop_reason),
+                    "adaptive_post_seconds": float(adaptive_post_seconds),
+                }
+            )
+
+        np.savez(sample_filename, **sample_payload)
         print("\a")
 
         # Log the data
@@ -1039,7 +1047,8 @@ if __name__ == "__main__":
 
     print("Detection frequency:", centre_freq)
     print("SNR threshold:", snr_threshold)
-    print("Adaptive capture:", adaptive_capture_enabled)
+    if adaptive_capture_enabled:
+        print("Adaptive capture enabled")
     if save_raw_samples:
         print("Saving raw sample data")
     else:
