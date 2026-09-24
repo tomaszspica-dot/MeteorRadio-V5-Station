@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-24 — upstream licensing clarification
+
+- upstream `rabssm/MeteorRadio` licensing confirmed as **GNU GPLv3** in issue #14
+- confirmed the upstream repository now contains a standard GPLv3 `LICENSE`
+- recorded that modified MeteorRadio source may be redistributed under GPLv3
+- updated V5 documentation to remove the obsolete "license unclear" blocker
+- kept the modified upstream acquisition core in `private_reference/` by current packaging policy until GPLv3 attribution, modification notices and source provenance are prepared
+- kept the independent V5 station-layer repository-wide license decision separate
+
 ## V5 — 2026-09-21 Golden refresh
 
 - refreshed the public station layer from the verified 2026-09-21 Golden

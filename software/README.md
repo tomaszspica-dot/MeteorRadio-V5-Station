@@ -11,4 +11,4 @@ Public components are separated from the upstream acquisition core:
 - `meteorradio-rmob/` — RMOB-oriented UTC export tooling
 - `tools/` — healthcheck and optional shared-radio ownership helper
 
-The modified upstream `MeteorRadio` core is copied only to Git-ignored `private_reference/`.
+The modified upstream `MeteorRadio` core is copied to Git-ignored `private_reference/` by default. MeteorRadio is now confirmed as GPLv3; intentional publication of the modified core is permitted once GPLv3 attribution, modification notices and source provenance are prepared.

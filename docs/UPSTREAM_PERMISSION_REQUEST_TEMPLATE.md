@@ -1,15 +1,21 @@
-# Template: request clarification/permission from upstream author
+# Historical upstream permission / license request
 
-Subject: Permission / license clarification for a modified MeteorRadio station project
+**Status: resolved on 2026-09-24 — do not send this request again.**
 
-Hello,
+The question documented by this former template was asked publicly in:
 
-I use your `rabssm/MeteorRadio` project as the acquisition/detection core of a Raspberry Pi + RTL-SDR GRAVES meteor station.
+<https://github.com/rabssm/MeteorRadio/issues/14>
 
-I have built a station overlay with additional local features such as adaptive recording, web dashboards, automatic scoring, retention, monitoring and systemd integration. I would like to publish the project on GitHub while preserving clear attribution to your original work.
+The upstream author confirmed that MeteorRadio is intended to be licensed under **GNU GPLv3**, that modified source may be redistributed under GPLv3, and that pull requests for improvements to `meteor_radar.py` are welcome but not required.
 
-I could not find an explicit LICENSE file in the repository. Could you please clarify the license for MeteorRadio and whether I may publicly distribute my modified versions of the source files, provided the original project and authorship are credited?
+The upstream repository now contains the standard GPLv3 `LICENSE` file.
 
-If you prefer, I can publish only my separate station-layer code and documentation and keep modifications to your core source private.
+For the current project policy, see:
 
-Thank you for the project and for any guidance.
+- `UPSTREAM_LICENSE_NOTICE.md`
+- `docs/LICENSE_DECISION.md`
+- `docs/UPSTREAM_GPLV3_PUBLICATION_CHECKLIST.md`
+
+## Historical request text
+
+The original request asked the upstream author to clarify the license, permission to redistribute modified source, required attribution, and whether upstream-core changes should preferably be submitted as pull requests. Those questions are now answered by issue #14.

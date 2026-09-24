@@ -2,7 +2,7 @@
 
 MeteorRadio V5 is a documented **Raspberry Pi 4 + RTL-SDR radio meteor detector** and **meteor-scatter monitoring station** for the **GRAVES 143.050 MHz** carrier. It extends the upstream **MeteorRadio** acquisition/detection core with adaptive capture, automatic scoring, retention, web dashboards, cached waterfall rendering, health monitoring, and optional shared-RTL-SDR arbitration for citizen-science radio observations.
 
-> **Repository status:** GitHub-ready documentation and station overlay. The upstream MeteorRadio core is intentionally **not** included in the public tree until redistribution/licensing is clarified. See [`UPSTREAM_LICENSE_NOTICE.md`](UPSTREAM_LICENSE_NOTICE.md).
+> **Repository status:** Public station overlay and documentation. Upstream MeteorRadio is now explicitly **GNU GPLv3** (clarified in upstream issue #14 and confirmed by the upstream `LICENSE` file on 2026-09-24). The modified upstream core is still not vendored here by default; it remains in `private_reference/` until it is prepared for GPLv3-compliant publication. See [`UPSTREAM_LICENSE_NOTICE.md`](UPSTREAM_LICENSE_NOTICE.md).
 
 <!-- MR_SHOWCASE_V1 -->
 ## Project preview
@@ -86,7 +86,7 @@ This folder is deliberately split into two layers:
 1. **Public GitHub material** — docs, custom web/statistics/services/tools and safe configuration examples.
 2. **Local-only reference** — when you run `IMPORT_FROM_INSTALLER.command`, the modified upstream core and machine-specific reference metadata are placed under `private_reference/`, which is ignored by Git.
 
-That design lets you document and publish the station without accidentally uploading station history, exact coordinates, raw detections, cache images, or upstream code whose redistribution status is unclear.
+That design lets you document and publish the station without accidentally uploading station history, exact coordinates, raw detections, cache images, or upstream-derived code before its GPLv3 attribution and modification notices are prepared.
 
 ## Populate this repository from the final installer
 
@@ -171,8 +171,18 @@ The acquisition/detection core is based on:
 
 - `rabssm/MeteorRadio`
 - <https://github.com/rabssm/MeteorRadio>
+- License: **GNU GPLv3**
+- Licensing clarification: <https://github.com/rabssm/MeteorRadio/issues/14>
 
 This repository is intended to document and package the **station overlay and operational layer**, not to erase upstream authorship.
+
+## Licensing boundaries
+
+MeteorRadio upstream code and any distributed modifications of that code remain under **GPLv3**. Existing copyright/license notices must be retained and modified upstream files must be identified as modified.
+
+The genuinely independent V5 station-layer components do **not** yet have a repository-wide license selected. Public availability alone should not be read as permission for unrestricted reuse.
+
+See [`docs/LICENSE_DECISION.md`](docs/LICENSE_DECISION.md) and [`UPSTREAM_LICENSE_NOTICE.md`](UPSTREAM_LICENSE_NOTICE.md).
 
 ## Safety and data handling
 

@@ -117,7 +117,9 @@ This directory intentionally contains the modified upstream MeteorRadio
 reference and machine-specific Golden metadata. It is excluded by .gitignore.
 
 Keep it locally for comparison, restoration and future patch generation.
-Do not publish the upstream-derived core until licensing/permission is clear.
+Upstream MeteorRadio is GPLv3; redistribution is permitted under GPLv3.
+This importer keeps the modified core private by default to prevent accidental
+publication before attribution, modification notices and provenance are ready.
 PRIVATE
 
 say "Generate import report"

@@ -12,8 +12,8 @@ Complete this before switching the GitHub repository to Public.
 - [ ] screenshots cropped and sanitized
 - [ ] exact station location intentionally chosen as public or omitted
 - [ ] upstream attribution present
-- [ ] upstream licensing/permission issue reviewed
-- [ ] modified upstream core is still only in ignored `private_reference/`, unless permission/license now allows publication
+- [ ] upstream GPLv3 status and issue #14 clarification reviewed
+- [ ] if modified upstream core is included, GPLv3 license/copyright notices, modification notes and corresponding source are complete; otherwise it remains in ignored `private_reference/`
 - [ ] repository description/topics set
 - [ ] README renders correctly on GitHub
 - [ ] release notes reviewed
