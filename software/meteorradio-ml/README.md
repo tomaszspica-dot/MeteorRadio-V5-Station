@@ -78,3 +78,25 @@ trainable classes. Change with `MR_ML_MIN_CLASS` only for experiments.
 The training script stores cross-validated balanced accuracy when the dataset is
 large enough. Do not enable automatic deletion/filtering from ML merely because
 training accuracy is high.
+
+
+## macOS / current station layout
+
+The current Tomasz station layout runs the MeteorRadio panels locally on macOS
+under `~/MeteorRadio-Mac` using `launchd`.
+
+The macOS installer is:
+
+```bash
+bash scripts/install_ml_v1_macos.sh
+```
+
+It verifies the local 8094/8096 services, auto-detects the active
+`v562_score_index.json` and the local SMP/radar-data directory, installs the
+module at `~/MeteorRadio-Mac/panels/meteorradio-ml`, stores runtime ML state at
+`~/MeteorRadio-Mac/state/meteorradio-ml`, and creates these LaunchAgents:
+
+- `pl.tomek.meteorradio.ml8101`
+- `pl.tomek.meteorradio.mlscore`
+
+No Raspberry Pi, SSH or systemd is required for this layout.
