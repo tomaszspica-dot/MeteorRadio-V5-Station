@@ -13,4 +13,4 @@ The V5 reference build includes station-specific changes and additions around th
 - health monitoring
 - optional radio-owner arbitration
 
-The exact modified upstream file is not published in this public tree pending license clarification. The behavior is documented in `docs/ADAPTIVE_CAPTURE_V2.md`.
+The exact modified upstream file is not published in this public tree by the current packaging policy. Upstream licensing is now confirmed as GPLv3, so a compliant source copy or patch may be prepared after its base commit, retained notices and modification information are verified. The behavior is documented in `docs/ADAPTIVE_CAPTURE_V2.md`.
