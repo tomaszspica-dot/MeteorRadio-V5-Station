@@ -1,0 +1,11 @@
+[Unit]
+Description=MeteorRadio ML predict new detections every 5 minutes
+
+[Timer]
+OnUnitInactiveSec=5min
+OnBootSec=150s
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
