@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""Export MeteorRadio daily CSV detections to monthly RMOB TXT/DAT files.
+
+The upstream MeteorRadio CSV timestamps are naive. Their source timezone is
+therefore an explicit input so hourly bins can be converted to UTC without
+changing acquisition.
+"""
+
+from __future__ import annotations
 
 # CODE PROVENANCE
 # RMOB workflow/format references:
@@ -7,238 +15,463 @@
 # The V5 UTC exporter is independently implemented for V5 CSV logs.
 # See docs/CODE_PROVENANCE.md.
 
-
+import argparse
+import calendar
 import csv
 import glob
-import calendar
-from pathlib import Path
+import os
 from collections import Counter
-from datetime import datetime
+from datetime import UTC, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-LOG_DIR = Path("/home/pi/radar_data/Logs")
-OUT_DIR = Path("/home/pi/meteorradio-rmob/output")
 
-LOCAL = ZoneInfo("Europe/Warsaw")
-UTC = ZoneInfo("UTC")
+DEFAULT_LOG_DIR = Path("/home/pi/radar_data/Logs")
+DEFAULT_OUT_DIR = Path("/home/pi/meteorradio-rmob/output")
 
-YEAR = 2026
-MONTH = 9
-OBSERVER = "MeteorRadio_Station"
 
-counts = Counter()
-source_rows = 0
-converted_rows = 0
+def parse_args() -> argparse.Namespace:
+    now = datetime.now(UTC)
 
-first_utc = None
-last_utc = None
-
-files = sorted(
-    glob.glob(
-        str(LOG_DIR / f"R{YEAR}{MONTH:02d}*.csv")
+    parser = argparse.ArgumentParser(
+        description="Export MeteorRadio counts in RMOB UTC format"
     )
-)
 
-print("SOURCE FILES:", len(files))
+    parser.add_argument(
+        "--year",
+        type=int,
+        default=now.year,
+    )
+    parser.add_argument(
+        "--month",
+        type=int,
+        choices=range(1, 13),
+        default=now.month,
+    )
+    parser.add_argument(
+        "--observer",
+        default=os.environ.get(
+            "RMOB_OBSERVER",
+            "MeteorRadio_Station",
+        ),
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=Path,
+        default=DEFAULT_LOG_DIR,
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUT_DIR,
+    )
+    parser.add_argument(
+        "--source-timezone",
+        default=os.environ.get(
+            "RMOB_SOURCE_TIMEZONE",
+            "UTC",
+        ),
+        help=(
+            "Timezone used by naive MeteorRadio CSV timestamps, "
+            "for example UTC or Europe/Warsaw"
+        ),
+    )
 
-for fn in files:
-
-    print(" READ:", Path(fn).name)
-
-    with open(fn, newline="", errors="replace") as f:
-
-        for row in csv.DictReader(f):
-
-            source_rows += 1
-
-            try:
-                sec = float(row["s"])
-
-                sec_int = int(sec)
-                usec = int(
-                    round(
-                        (sec - sec_int)
-                        * 1_000_000
-                    )
-                )
-
-                if usec >= 1_000_000:
-                    sec_int += 1
-                    usec -= 1_000_000
-
-                local_dt = datetime(
-                    int(row["Y"]),
-                    int(row["M"]),
-                    int(row["D"]),
-                    int(row["h"]),
-                    int(row["m"]),
-                    sec_int,
-                    usec,
-                    tzinfo=LOCAL,
-                )
-
-                utc_dt = local_dt.astimezone(UTC)
-
-            except Exception:
-                continue
-
-            if first_utc is None or utc_dt < first_utc:
-                first_utc = utc_dt
-
-            if last_utc is None or utc_dt > last_utc:
-                last_utc = utc_dt
-
-            if (
-                utc_dt.year == YEAR
-                and utc_dt.month == MONTH
-            ):
-                counts[
-                    (
-                        utc_dt.day,
-                        utc_dt.hour,
-                    )
-                ] += 1
-
-                converted_rows += 1
+    return parser.parse_args()
 
 
-if first_utc is None:
-    raise SystemExit("BRAK POPRAWNYCH REKORDOW")
+def row_to_utc(
+    row: dict[str, str],
+    source_tz: ZoneInfo,
+) -> datetime | None:
+    try:
+        sec = float(row["s"])
+        sec_int = int(sec)
+        usec = int(
+            round(
+                (sec - sec_int)
+                * 1_000_000
+            )
+        )
 
-OUT_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
+        if usec >= 1_000_000:
+            sec_int += 1
+            usec -= 1_000_000
 
-month_name = calendar.month_abbr[MONTH].lower()
+        source_dt = datetime(
+            int(row["Y"]),
+            int(row["M"]),
+            int(row["D"]),
+            int(row["h"]),
+            int(row["m"]),
+            sec_int,
+            usec,
+            tzinfo=source_tz,
+        )
 
-txt_name = (
-    f"{OBSERVER}_"
-    f"{MONTH:02d}{YEAR}"
-    f"rmob.TXT"
-)
+        return source_dt.astimezone(UTC)
 
-txt_path = OUT_DIR / txt_name
-
-now_utc = datetime.now(UTC)
-
-days_in_month = calendar.monthrange(
-    YEAR,
-    MONTH
-)[1]
-
-with txt_path.open(
-    "w",
-    newline="\n"
-) as out:
-
-    header = month_name + "|"
-
-    for hour in range(24):
-        header += f" {hour:02d}h|"
-
-    out.write(header + "\n")
-
-    for day in range(
-        1,
-        days_in_month + 1
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
     ):
+        return None
 
-        line = f" {day:02d}|"
 
-        for hour in range(24):
+def collect_counts(
+    log_dir: Path,
+    year: int,
+    month: int,
+    source_tz: ZoneInfo,
+) -> tuple[
+    Counter[tuple[int, int]],
+    int,
+    int,
+    datetime | None,
+    datetime | None,
+]:
+    counts: Counter[tuple[int, int]] = Counter()
 
-            hour_start = datetime(
-                YEAR,
-                MONTH,
-                day,
-                hour,
-                0,
-                0,
-                tzinfo=UTC,
+    source_rows = 0
+    converted_rows = 0
+
+    first_utc: datetime | None = None
+    last_utc: datetime | None = None
+
+    files = sorted(
+        glob.glob(
+            str(
+                log_dir
+                / f"R{year}{month:02d}*.csv"
             )
+        )
+    )
 
-            if hour_start > now_utc:
-                cell = "???"
+    print(
+        "SOURCE FILES:",
+        len(files),
+    )
 
-            elif hour_start < first_utc.replace(
-                minute=0,
-                second=0,
-                microsecond=0
-            ):
-                cell = "???"
+    for fn in files:
+        path = Path(fn)
 
-            else:
-                cell = str(
-                    counts.get(
-                        (day, hour),
-                        0
-                    )
+        print(
+            " READ:",
+            path.name,
+        )
+
+        with path.open(
+            newline="",
+            errors="replace",
+        ) as handle:
+
+            for row in csv.DictReader(handle):
+                source_rows += 1
+
+                utc_dt = row_to_utc(
+                    row,
+                    source_tz,
                 )
 
-            line += f" {cell:<3}|"
+                if utc_dt is None:
+                    continue
 
-        out.write(line + "\n")
+                if (
+                    first_utc is None
+                    or utc_dt < first_utc
+                ):
+                    first_utc = utc_dt
+
+                if (
+                    last_utc is None
+                    or utc_dt > last_utc
+                ):
+                    last_utc = utc_dt
+
+                if (
+                    utc_dt.year == year
+                    and utc_dt.month == month
+                ):
+                    counts[
+                        (
+                            utc_dt.day,
+                            utc_dt.hour,
+                        )
+                    ] += 1
+
+                    converted_rows += 1
+
+    return (
+        counts,
+        source_rows,
+        converted_rows,
+        first_utc,
+        last_utc,
+    )
 
 
-dat_path = OUT_DIR / (
-    f"RMOB-{YEAR % 100:02d}"
-    f"{MONTH:02d}.DAT"
-)
+def write_rmob_files(
+    counts: Counter[tuple[int, int]],
+    *,
+    year: int,
+    month: int,
+    observer: str,
+    out_dir: Path,
+    first_utc: datetime,
+    now_utc: datetime | None = None,
+) -> tuple[Path, Path]:
 
-with dat_path.open(
-    "w",
-    newline="\n"
-) as out:
+    out_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    for day in range(
-        1,
-        days_in_month + 1
-    ):
-        for hour in range(24):
+    now_utc = (
+        now_utc
+        or datetime.now(UTC)
+    )
 
-            hour_start = datetime(
-                YEAR,
-                MONTH,
-                day,
-                hour,
-                tzinfo=UTC
+    days_in_month = calendar.monthrange(
+        year,
+        month,
+    )[1]
+
+    month_name = calendar.month_abbr[
+        month
+    ].lower()
+
+    txt_path = (
+        out_dir
+        / (
+            f"{observer}_"
+            f"{month:02d}{year}"
+            f"rmob.TXT"
+        )
+    )
+
+    first_hour = first_utc.replace(
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+
+    with txt_path.open(
+        "w",
+        newline="\n",
+    ) as out:
+
+        header = (
+            month_name
+            + "|"
+            + "".join(
+                f" {hour:02d}h|"
+                for hour in range(24)
             )
+        )
 
-            if hour_start > now_utc:
-                continue
+        out.write(
+            header
+            + "\n"
+        )
 
-            if hour_start < first_utc.replace(
-                minute=0,
-                second=0,
-                microsecond=0
-            ):
-                continue
+        for day in range(
+            1,
+            days_in_month + 1,
+        ):
+            line = f" {day:02d}|"
 
-            value = counts.get(
-                (day, hour),
-                0
-            )
+            for hour in range(24):
+
+                hour_start = datetime(
+                    year,
+                    month,
+                    day,
+                    hour,
+                    tzinfo=UTC,
+                )
+
+                if (
+                    hour_start > now_utc
+                    or hour_start < first_hour
+                ):
+                    cell = "???"
+                else:
+                    cell = str(
+                        counts.get(
+                            (
+                                day,
+                                hour,
+                            ),
+                            0,
+                        )
+                    )
+
+                line += (
+                    f" {cell:<3}|"
+                )
 
             out.write(
-                f"{YEAR % 100:02d}"
-                f"{MONTH:02d}"
-                f"{day:02d}"
-                f"{hour:02d},"
-                f"{hour:02d},"
-                f"{value}\n"
+                line
+                + "\n"
             )
 
+    dat_path = (
+        out_dir
+        / (
+            f"RMOB-"
+            f"{year % 100:02d}"
+            f"{month:02d}"
+            f".DAT"
+        )
+    )
 
-print()
-print("========================================")
-print(" RMOB UTC EXPORT")
-print("========================================")
-print("SOURCE ROWS:   ", source_rows)
-print("UTC SEP ROWS:  ", converted_rows)
-print("FIRST UTC:     ", first_utc)
-print("LAST UTC:      ", last_utc)
-print("TXT:           ", txt_path)
-print("DAT:           ", dat_path)
-print("TOTAL COUNT:   ", sum(counts.values()))
-print("========================================")
+    with dat_path.open(
+        "w",
+        newline="\n",
+    ) as out:
+
+        for day in range(
+            1,
+            days_in_month + 1,
+        ):
+            for hour in range(24):
+
+                hour_start = datetime(
+                    year,
+                    month,
+                    day,
+                    hour,
+                    tzinfo=UTC,
+                )
+
+                if (
+                    hour_start > now_utc
+                    or hour_start < first_hour
+                ):
+                    continue
+
+                value = counts.get(
+                    (
+                        day,
+                        hour,
+                    ),
+                    0,
+                )
+
+                out.write(
+                    f"{year % 100:02d}"
+                    f"{month:02d}"
+                    f"{day:02d}"
+                    f"{hour:02d},"
+                    f"{hour:02d},"
+                    f"{value}"
+                    "\n"
+                )
+
+    return (
+        txt_path,
+        dat_path,
+    )
+
+
+def run_export(
+    args: argparse.Namespace,
+) -> tuple[Path, Path]:
+
+    source_tz = ZoneInfo(
+        args.source_timezone
+    )
+
+    (
+        counts,
+        source_rows,
+        converted_rows,
+        first_utc,
+        last_utc,
+    ) = collect_counts(
+        args.log_dir,
+        args.year,
+        args.month,
+        source_tz,
+    )
+
+    if first_utc is None:
+        raise SystemExit(
+            "NO VALID RECORDS"
+        )
+
+    (
+        txt_path,
+        dat_path,
+    ) = write_rmob_files(
+        counts,
+        year=args.year,
+        month=args.month,
+        observer=args.observer,
+        out_dir=args.out_dir,
+        first_utc=first_utc,
+    )
+
+    print()
+    print(
+        "========================================"
+    )
+    print(
+        " RMOB UTC EXPORT"
+    )
+    print(
+        "========================================"
+    )
+    print(
+        "SOURCE TIMEZONE:",
+        args.source_timezone,
+    )
+    print(
+        "SOURCE ROWS:   ",
+        source_rows,
+    )
+    print(
+        "UTC MONTH ROWS:",
+        converted_rows,
+    )
+    print(
+        "FIRST UTC:     ",
+        first_utc,
+    )
+    print(
+        "LAST UTC:      ",
+        last_utc,
+    )
+    print(
+        "TXT:           ",
+        txt_path,
+    )
+    print(
+        "DAT:           ",
+        dat_path,
+    )
+    print(
+        "TOTAL COUNT:   ",
+        sum(
+            counts.values()
+        ),
+    )
+    print(
+        "========================================"
+    )
+
+    return (
+        txt_path,
+        dat_path,
+    )
+
+
+def main() -> None:
+    run_export(
+        parse_args()
+    )
+
+
+if __name__ == "__main__":
+    main()
