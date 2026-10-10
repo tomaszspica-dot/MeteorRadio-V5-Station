@@ -1,0 +1,22 @@
+[Unit]
+Description=MeteorRadio RMOB monthly TXT/JPEG generation and upload
+After=network-online.target meteorradio.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+Environment=HOME=/home/pi
+Environment=MPLBACKEND=Agg
+WorkingDirectory=/home/pi/meteorradio-rmob
+
+ExecStart=/home/pi/vMeteorRadio/bin/python /home/pi/meteorradio-rmob/rmob_publish.py --config /home/pi/.config/meteorradio/rmob.ini
+
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=240
+
+StandardOutput=journal
+StandardError=journal
