@@ -1,0 +1,11 @@
+[Unit]
+Description=MeteorRadio RMOB hourly publisher
+
+[Timer]
+OnCalendar=*-*-* *:57:00
+Persistent=true
+AccuracySec=30s
+Unit=meteorradio-rmob.service
+
+[Install]
+WantedBy=timers.target
