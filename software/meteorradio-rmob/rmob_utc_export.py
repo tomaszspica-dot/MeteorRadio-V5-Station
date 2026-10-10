@@ -21,7 +21,7 @@ import csv
 import glob
 import os
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -139,14 +139,63 @@ def collect_counts(
     first_utc: datetime | None = None
     last_utc: datetime | None = None
 
-    files = sorted(
-        glob.glob(
-            str(
-                log_dir
-                / f"R{year}{month:02d}*.csv"
+    # UTC month boundaries can fall on an adjacent local calendar day.
+    # Read the requested source-month files plus one neighbouring day on
+    # each side, then filter every row after timezone conversion.
+    month_start = datetime(
+        year,
+        month,
+        1,
+        tzinfo=UTC,
+    )
+
+    if month == 12:
+        next_month_start = datetime(
+            year + 1,
+            1,
+            1,
+            tzinfo=UTC,
+        )
+    else:
+        next_month_start = datetime(
+            year,
+            month + 1,
+            1,
+            tzinfo=UTC,
+        )
+
+    previous_day = (
+        month_start
+        - timedelta(days=1)
+    )
+
+    candidate_patterns = [
+        f"R{year}{month:02d}*.csv",
+        (
+            "R"
+            + previous_day.strftime("%Y%m%d")
+            + "*.csv"
+        ),
+        (
+            "R"
+            + next_month_start.strftime("%Y%m%d")
+            + "*.csv"
+        ),
+    ]
+
+    file_set: set[str] = set()
+
+    for pattern in candidate_patterns:
+        file_set.update(
+            glob.glob(
+                str(
+                    log_dir
+                    / pattern
+                )
             )
         )
-    )
+
+    files = sorted(file_set)
 
     print(
         "SOURCE FILES:",
