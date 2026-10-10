@@ -14,6 +14,8 @@
 | `meteorradio-retention.timer` | timer | enabled | launches retention cleanup |
 | `meteorradio-healthcheck.service` | oneshot/static worker | timer-triggered | passive health snapshot |
 | `meteorradio-healthcheck.timer` | timer | enabled | periodic health check |
+| `meteorradio-rmob.service` | oneshot/static worker | timer-triggered | build RMOB TXT/DAT/JPEG and upload the TXT/JPEG pair |
+| `meteorradio-rmob.timer` | timer | enabled only after RMOB dry-run verification | launches RMOB publisher at minute :57 |
 | `radio-owner-restore.service` | service | enabled only for shared-radio design | restores persisted radio owner after boot |
 
 ## Important reference behavior
@@ -21,6 +23,8 @@
 In the shared-radio reference build, `meteorradio.service` being `disabled` is deliberate. `radio-owner-restore.service` decides which receiver should own the RTL-SDR after boot.
 
 Do not change that design without understanding the local radio-sharing topology.
+
+The RMOB publisher does not open the RTL-SDR. It reads the daily MeteorRadio CSV logs and can therefore run while acquisition continues.
 
 ---
 
@@ -36,3 +40,5 @@ Do not change that design without understanding the local radio-sharing topology
 | 8100 | 3D Trajectory Analyzer | Single-station bistatic trajectory-family analysis |
 
 The 8099/8100 analysis chain operates on saved observations and does not acquire the RTL-SDR directly.
+
+For the RMOB migration profile, 8099 and 8100 are optional and are deliberately excluded. The migration target is acquisition + RMOB export/JPEG/upload + passive health monitoring only.
